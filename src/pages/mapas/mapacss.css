@@ -1,0 +1,24 @@
+/* css/mapa.css */
+
+/* Define uma altura para o contêiner do mapa */
+.map-wrapper {
+  height: calc(100vh - 200px); /* Altura da viewport menos espaço do header */
+  width: 100%;
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-marker-icon {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}

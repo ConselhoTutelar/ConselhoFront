@@ -1,0 +1,165 @@
+.btn-primary {
+  background-color: #3159A3;
+}
+
+.hamburger-toggle {
+  border: none;
+  background: transparent;
+  color: #3159A3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.25rem;
+}
+
+.hamburger-toggle:focus {
+  outline: none;
+}
+
+.hamburger-line {
+  display: block;
+  width: 26px;
+  height: 3px;
+  border-radius: 999px;
+  background: #3159A3;
+}
+
+.logo-center-link img {
+  display: block;
+  margin: 0 auto 0.35rem auto;
+}
+
+.nav-bar-inner {
+  gap: 1rem;
+}
+
+.nav-side {
+  flex: 1;
+}
+
+.nav-center {
+  flex: 0;
+}
+
+.header-text p {
+  letter-spacing: 0.08em;
+}
+
+.hamburger-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+  z-index: 1039;
+}
+
+.hamburger-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hamburger-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: min(360px, 90vw);
+  background: #fff;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+.hamburger-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+
+.drawer-section {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+
+.drawer-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.drawer-link {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  background-color: #fff;
+  cursor: pointer;
+  width: 100%;
+}
+
+.drawer-link:hover {
+  background: #f8fafc;
+  border-color: #3159A3;
+}
+
+.drawer-link:focus {
+  outline: none;
+}
+
+.drawer-link-danger {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.drawer-link-danger:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+.drawer-documents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.drawer-document {
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  display: block;
+  color: #1f2937;
+  text-decoration: none;
+}
+
+.drawer-document:hover {
+  border-color: #3159A3;
+  background: #fff;
+}
