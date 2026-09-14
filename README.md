@@ -35,50 +35,50 @@ Bootstrap Icons: Biblioteca de ícones para elementos visuais.
 
 CSS Personalizado: Estilos adicionais para atender ao design específico do projeto.
 
-Como Rodar o Projeto Localmente
-Para configurar e executar este projeto em sua máquina local, siga os passos abaixo:
+## 🚀 Como Rodar o Projeto com Docker (Recomendado)
 
-Pré-requisitos
-Certifique-se de ter o Node.js e o npm (Node Package Manager) ou Yarn instalados em seu sistema.
+Com ambos os repositórios (`conselho-tutelar-front` e `conselho-tutelar-back`) clonados lado a lado, você pode subir toda a aplicação (Front-end, Back-end API e MySQL) diretamente daqui:
 
-Node.js (inclui npm)
+```bash
+npm run docker:up
+```
+*(Ou diretamente com: `docker compose up -d`)*
 
-Yarn (Opcional)
+Isso irá subir:
+- **Front-end (React/Vite):** http://localhost:5173 (com hot-reload)
+- **Back-end API (Node.js):** http://localhost:3000
+- **Banco de Dados (MySQL 8.0):** porta `3306`
 
-Instalação
-Clone o repositório:
+Para acompanhar os logs:
+```bash
+npm run docker:logs
+```
 
-Bash
+Para parar todos os containers:
+```bash
+npm run docker:down
+```
 
-git clone <URL_DO_SEU_REPOSITORIO>
-cd <nome_da_pasta_do_projeto>
-(Substitua <URL_DO_SEU_REPOSITORIO> pelo link do seu repositório Git.)
+---
 
-Instale as dependências:
-Utilizando npm:
+## 💻 Como Rodar o Projeto Localmente (Sem Docker)
 
-Bash
+### Pré-requisitos
+- Node.js (versão 18 ou superior recomendada)
+- npm ou Yarn
+- Back-end em execução (via Docker ou local)
 
+### Instalação
+```bash
 npm install
-Ou utilizando Yarn:
+```
 
-Bash
-
-yarn install
-Executando a Aplicação
-Após a instalação das dependências, você pode iniciar o servidor de desenvolvimento.
-
-Utilizando npm:
-
-Bash
-
+### Executando a Aplicação
+```bash
 npm run dev
-Ou utilizando Yarn:
+```
+A aplicação estará disponível em `http://localhost:5173`.
 
-Bash
-
-yarn dev
-Isso iniciará a aplicação em modo de desenvolvimento. Geralmente, ela estará disponível em http://localhost:5173 (ou outra porta disponível). O terminal indicará o endereço exato.
 
 Estrutura do Projeto
 .
