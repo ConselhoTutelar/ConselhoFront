@@ -24,6 +24,7 @@ import CadastrarProfissional from './pages/cadastrarProfissionais/CadastrarProfi
 import VisualizarDocumentos from './pages/visualizarDocumentos/VisualizarDocumentos.jsx';
 import Mapa from './pages/mapas/mapa.jsx';
 import PerfilConselheiro from './pages/perfilConselheiro/PerfilConselheiro.jsx';
+import Auditoria from './pages/auditoria/Auditoria.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 
@@ -87,6 +88,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute roles={['admin']}>
             <CadastrarProfissional />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "auditoria",
+        element: (
+          <ProtectedRoute roles={['admin']}>
+            <Auditoria />
           </ProtectedRoute>
         ),
       },

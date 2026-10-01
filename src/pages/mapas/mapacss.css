@@ -1,14 +1,111 @@
-/* css/mapa.css */
+/* src/pages/mapas/mapacss.css */
 
-/* Define uma altura para o contêiner do mapa */
-.map-wrapper {
-  height: calc(100vh - 200px); /* Altura da viewport menos espaço do header */
+.map-page-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 110px);
   width: 100%;
-  margin-top: 20px;
-  border-radius: 8px;
-  overflow: hidden;
+  padding: 0 20px 20px 20px;
 }
 
+/* Toolbar com filtros e modos */
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  margin-bottom: 14px;
+  gap: 12px;
+  z-index: 10;
+}
+
+.map-toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.map-title {
+  font-weight: 700;
+  color: #3159A3;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.map-toolbar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+/* Container do mapa */
+.map-wrapper {
+  flex: 1;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #cbd5e1;
+}
+
+/* Legenda flutuante do mapa de calor */
+.heatmap-legend {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  border: 1px solid #e2e8f0;
+  min-width: 220px;
+}
+
+.legend-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.legend-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #2563eb, #06b6d4, #10b981, #f59e0b, #ef4444);
+  margin-bottom: 4px;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Marcadores pontuais customizados */
 .custom-marker-icon {
   display: flex !important;
   align-items: center;
@@ -19,6 +116,18 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  border: 3px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+  border: 2.5px solid #ffffff;
+  display: block;
+}
+
+/* Animação do botão recarregar */
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
 }

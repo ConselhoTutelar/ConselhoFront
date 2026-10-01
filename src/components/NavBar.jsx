@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     IoPerson,
     IoMap,
@@ -9,24 +9,27 @@ import {
     IoPeople,
     IoAddCircle,
     IoLogOut,
-    IoCreate
+    IoCreate,
+    IoShieldCheckmark,
+    IoMenu,
+    IoChevronBack
 } from "react-icons/io5";
 
 import logo from "../assets/logo.png";
 import { useAuth } from "../context/AuthContext";
 
 const documentosParaPreencher = [
-    { label: "Recebimento de Denúncia", descricao: "Registrar denúncia", to: "/home/recebimento-denuncia" },
-    { label: "Ficha de Atendimento", descricao: "Relato de atendimento", to: "/home/ficha-atendimento" },
-    { label: "Notificação", descricao: "Emitir notificação", to: "/home/notificacao" },
+    { label: "Recebimento de Denúncia", descricao: "Registrar denúncia de violação", to: "/home/recebimento-denuncia" },
+    { label: "Ficha de Atendimento", descricao: "Relato de atendimento individual", to: "/home/ficha-atendimento" },
+    { label: "Notificação", descricao: "Emitir notificação oficial", to: "/home/notificacao" },
     { label: "Termo Medidas Responsáveis", descricao: "Aplicar medidas aos responsáveis", to: "/home/termo-medidas-responsaveis" },
     { label: "Termo Medidas Criança/Adolescente", descricao: "Registrar medida protetiva", to: "/home/termo-medidas-crianca" }
 ];
 
-const NavBar = () => {
-    const [menuAberto, setMenuAberto] = useState(false);
+const NavBar = ({ menuAberto, toggleMenu, fecharMenu }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const linksBasicos = [
         { label: "Menu Principal", to: "/home", icon: IoHome },
@@ -35,9 +38,10 @@ const NavBar = () => {
     ];
 
     const linksAdmin = [
-        { label: "Seu Perfil", to: "/home/perfil-administrador", icon: IoPerson },
+        { label: "Trilha de Auditoria", to: "/home/auditoria", icon: IoShieldCheckmark, badge: "Zero-Trust" },
         { label: "Gerenciar Profissionais", to: "/home/gerenciar-profissionais", icon: IoPeople },
         { label: "Cadastrar Profissionais", to: "/home/cadastrar-profissional", icon: IoAddCircle },
+        { label: "Seu Perfil", to: "/home/perfil-administrador", icon: IoPerson },
     ];
 
     const linksConselheiro = [
@@ -45,129 +49,210 @@ const NavBar = () => {
     ];
 
     const profileLinks = [
-        ...(user?.role === 'admin' ? linksAdmin : linksConselheiro),
-        { label: "Sair do sistema", icon: IoLogOut, variant: "danger", action: () => { logout(); navigate('/'); } }
+        ...(user?.role === 'admin' ? linksAdmin : linksConselheiro)
     ];
 
-    const fecharMenu = () => setMenuAberto(false);
-
+    // No desktop (>= 992px) o menu permanece FIXO na tela enquanto o usuário navega!
+    // No mobile (< 992px), o menu fecha automaticamente após clicar em um link.
     const handleLinkClick = (action) => {
         if (action) {
             action();
-            fecharMenu();
-        } else {
+        }
+        if (window.innerWidth < 992 && fecharMenu) {
             fecharMenu();
         }
     };
 
+    const isLinkActive = (to) => {
+        if (to === "/home") {
+            return location.pathname === "/home" || location.pathname === "/home/";
+        }
+        return location.pathname.startsWith(to);
+    };
+
     return (
         <>
-            <nav className="navbar bg-white fixed-top px-4 px-lg-5 py-3 shadow-lg">
-                <div className="w-100 d-flex align-items-center position-relative gap-3 nav-bar-inner">
-                    <div className="nav-side d-flex align-items-center">
+            {/* Topbar Fixa Superior */}
+            <nav className="navbar bg-white fixed-top px-3 px-lg-4 shadow-sm app-top-header">
+                <div className="w-100 d-flex align-items-center justify-content-between gap-2">
+                    
+                    {/* Botão de Toggle do Menu Lateral Fixo */}
+                    <div className="d-flex align-items-center gap-2">
                         <button
-                            className="hamburger-toggle"
+                            className={`btn btn-light d-flex align-items-center gap-2 border px-3 py-2 menu-toggle-btn ${menuAberto ? 'active' : ''}`}
                             type="button"
-                            onClick={() => setMenuAberto(true)}
-                            aria-label="Abrir menu"
+                            onClick={toggleMenu}
+                            aria-label={menuAberto ? "Fechar menu lateral" : "Abrir menu lateral"}
+                            title={menuAberto ? "Recolher menu lateral" : "Fixar menu lateral"}
                         >
-                            <span className="hamburger-line" />
-                            <span className="hamburger-line" />
-                            <span className="hamburger-line" />
+                            <IoMenu size={22} className="text-primary-emphasis" />
+                            <span className="fw-semibold d-none d-sm-inline" style={{ fontSize: "0.9rem" }}>
+                                {menuAberto ? "Recolher Menu" : "Menu Lateral"}
+                            </span>
                         </button>
+
+                        <span className="fw-semibold text-secondary d-none d-md-inline" style={{ fontSize: "0.9rem" }}>
+                            Conselho Tutelar de Panambi
+                        </span>
                     </div>
-                    <div className="nav-center d-flex justify-content-center">
-                        <Link to="/home" className="logo-center-link text-decoration-none text-center">
-                            <img src={logo} style={{ width: "90px" }} alt="Conselho Tutelar" />
+
+                    {/* Logo Central */}
+                    <div className="d-flex justify-content-center">
+                        <Link to="/home" className="logo-center-link text-decoration-none">
+                            <img src={logo} style={{ height: "46px", width: "auto" }} alt="Conselho Tutelar" />
                         </Link>
                     </div>
-                    <div className="nav-side header-text text-end">
-                        {user && (
-                            <>
-                                <strong className="d-block">{user.nome}</strong>
-                                <small className="text-muted">{user.cargo}</small>
-                            </>
+
+                    {/* Perfil do Usuário e Logout */}
+                    <div className="d-flex align-items-center gap-2 text-end">
+                        {user ? (
+                            <div className="d-flex align-items-center gap-2">
+                                <div className="d-none d-sm-block text-end">
+                                    <strong className="d-block text-dark text-truncate" style={{ maxWidth: "180px", fontSize: "0.85rem" }}>
+                                        {user.nome}
+                                    </strong>
+                                    <small className="text-muted d-block" style={{ fontSize: "0.75rem" }}>
+                                        <span className={`badge ${user.role === 'admin' ? 'bg-primary' : 'bg-secondary'} me-1`}>
+                                            {user.role === 'admin' ? 'Administrador' : 'Conselheiro'}
+                                        </span>
+                                        {user.cargo}
+                                    </small>
+                                </div>
+                                <button
+                                    onClick={() => { logout(); navigate('/'); }}
+                                    className="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 px-2 py-1"
+                                    title="Sair do sistema"
+                                >
+                                    <IoLogOut size={16} />
+                                    <span className="d-none d-md-inline">Sair</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <small className="text-muted">Painel Administrativo</small>
                         )}
-                        {!user && <small className="text-muted">Painel Administrativo</small>}
                     </div>
                 </div>
             </nav>
 
-            <div className={`hamburger-overlay ${menuAberto ? "show" : ""}`} onClick={fecharMenu} />
-            <aside className={`hamburger-drawer ${menuAberto ? "open" : ""}`}>
-                <div className="drawer-header">
+            {/* Overlay apenas para Mobile (< 992px) */}
+            <div
+                className={`hamburger-overlay ${menuAberto ? "show" : ""}`}
+                onClick={fecharMenu}
+            />
+
+            {/* Menu Lateral Fixo / Drawer Recolhível */}
+            <aside className={`app-sidebar hamburger-drawer ${menuAberto ? "open" : ""}`}>
+                {/* Cabeçalho do Menu com Botão de Fechar */}
+                <div className="sidebar-header d-flex align-items-center justify-content-between px-3 py-3 border-bottom">
                     <div className="d-flex align-items-center gap-2">
-                        <img src={logo} alt="Conselho Tutelar" style={{ width: "56px" }} />
+                        <img src={logo} alt="Conselho Tutelar" style={{ height: "36px", width: "auto" }} />
+                        <div>
+                            <span className="fw-bold d-block text-dark lh-1" style={{ fontSize: "0.95rem" }}>
+                                Navegação
+                            </span>
+                            <small className="text-muted" style={{ fontSize: "0.72rem" }}>
+                                Painel Integrado
+                            </small>
+                        </div>
                     </div>
-                    <button className="btn btn-link text-dark p-1" onClick={fecharMenu} aria-label="Fechar menu">
-                        <IoClose size={28} />
+                    <button
+                        className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-1 rounded-circle"
+                        onClick={fecharMenu}
+                        aria-label="Fechar menu lateral"
+                        title="Recolher / Fechar menu"
+                        style={{ width: "32px", height: "32px" }}
+                    >
+                        <IoClose size={20} />
                     </button>
                 </div>
 
-                <div className="drawer-section">
-                    <p className="drawer-title">Navegação</p>
-                    <div className="d-flex flex-column gap-2">
-                        {linksBasicos.map(({ label, to, icon: Icon }) => (
-                            <Link
-                                key={label}
-                                to={to}
-                                onClick={fecharMenu}
-                                className="drawer-link"
-                            >
-                                {Icon && <Icon className="me-2" />}
-                                {label}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {profileLinks.length > 0 && (
+                {/* Conteúdo com rolagem do menu lateral */}
+                <div className="sidebar-content-scroll p-3 d-flex flex-column gap-3">
+                    
+                    {/* 1. Navegação Geral */}
                     <div className="drawer-section">
-                        <p className="drawer-title">Perfil e gestão</p>
-                        <div className="d-flex flex-column gap-2">
-                            {profileLinks.map(({ label, to, icon: Icon, variant, action }) =>
-                                action ? (
-                                    <button
-                                        key={label}
-                                        onClick={() => handleLinkClick(action)}
-                                        className={`drawer-link ${variant === 'danger' ? 'drawer-link-danger' : ''}`}
-                                    >
-                                        {Icon && <Icon className="me-2" />}
-                                        {label}
-                                    </button>
-                                ) : (
-                                    <Link
-                                        key={label}
-                                        to={to}
-                                        onClick={fecharMenu}
-                                        className="drawer-link"
-                                    >
-                                        {Icon && <Icon className="me-2" />}
-                                        {label}
-                                    </Link>
-                                )
-                            )}
+                        <p className="drawer-title mb-2">Visão Geral</p>
+                        <div className="d-flex flex-column gap-1">
+                            {linksBasicos.map(({ label, to, icon: Icon }) => (
+                                <Link
+                                    key={to}
+                                    to={to}
+                                    onClick={() => handleLinkClick()}
+                                    className={`drawer-link ${isLinkActive(to) ? 'active' : ''}`}
+                                >
+                                    {Icon && <Icon className="me-2 fs-5" />}
+                                    <span>{label}</span>
+                                </Link>
+                            ))}
                         </div>
                     </div>
-                )}
 
-                <div className="drawer-section">
-                    <p className="drawer-title d-flex align-items-center gap-2">
-                        <IoCreate /> Documentos para preencher
-                    </p>
-                    <div className="drawer-documents">
-                        {documentosParaPreencher.map((doc) => (
-                            <Link
-                                key={doc.to}
-                                to={doc.to}
-                                onClick={fecharMenu}
-                                className="drawer-document text-decoration-none"
-                            >
-                                <p className="mb-1 fw-semibold text-dark">{doc.label}</p>
-                                <small className="text-muted">{doc.descricao}</small>
-                            </Link>
-                        ))}
+                    {/* 2. Documentos para Preencher */}
+                    <div className="drawer-section">
+                        <p className="drawer-title d-flex align-items-center gap-2 mb-2">
+                            <IoCreate /> Documentos & Medidas
+                        </p>
+                        <div className="drawer-documents d-flex flex-column gap-1">
+                            {documentosParaPreencher.map((doc) => (
+                                <Link
+                                    key={doc.to}
+                                    to={doc.to}
+                                    onClick={() => handleLinkClick()}
+                                    className={`drawer-document ${isLinkActive(doc.to) ? 'active' : ''}`}
+                                >
+                                    <div className="d-flex align-items-center justify-content-between">
+                                        <p className="mb-0 fw-semibold text-dark" style={{ fontSize: "0.85rem" }}>
+                                            {doc.label}
+                                        </p>
+                                    </div>
+                                    <small className="text-muted d-block text-truncate" style={{ fontSize: "0.74rem" }}>
+                                        {doc.descricao}
+                                    </small>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
+
+                    {/* 3. Gestão e Segurança */}
+                    {profileLinks.length > 0 && (
+                        <div className="drawer-section">
+                            <p className="drawer-title mb-2">Gestão & Segurança</p>
+                            <div className="d-flex flex-column gap-1">
+                                {profileLinks.map(({ label, to, icon: Icon, badge }) => (
+                                    <Link
+                                        key={to}
+                                        to={to}
+                                        onClick={() => handleLinkClick()}
+                                        className={`drawer-link ${isLinkActive(to) ? 'active' : ''}`}
+                                    >
+                                        <div className="d-flex align-items-center justify-content-between w-100">
+                                            <div className="d-flex align-items-center">
+                                                {Icon && <Icon className="me-2 fs-5" />}
+                                                <span>{label}</span>
+                                            </div>
+                                            {badge && (
+                                                <span className="badge bg-success-subtle text-success border border-success-subtle" style={{ fontSize: "0.68rem" }}>
+                                                    {badge}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 4. Sair */}
+                    <div className="mt-auto pt-2">
+                        <button
+                            onClick={() => handleLinkClick(() => { logout(); navigate('/'); })}
+                            className="drawer-link drawer-link-danger w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+                        >
+                            <IoLogOut size={18} />
+                            <span>Sair do Sistema</span>
+                        </button>
+                    </div>
+
                 </div>
             </aside>
         </>

@@ -74,96 +74,100 @@ function GerenciarProfissionais() {
 
     if (loading) {
         return (
-            <Container className="gerenciar-profissionais-container my-5">
-                <div className="text-center">
-                    <Spinner animation="border" role="status">
+            <Container className="gerenciar-profissionais-container my-4">
+                <Card className="shadow-lg p-5 border-0 bg-white text-center" style={{ borderRadius: '16px' }}>
+                    <Spinner animation="border" role="status" variant="primary">
                         <span className="visually-hidden">Carregando...</span>
                     </Spinner>
-                    <p className="mt-3">Carregando profissionais...</p>
-                </div>
+                    <p className="mt-3 mb-0 text-muted">Carregando profissionais...</p>
+                </Card>
             </Container>
         );
     }
 
     if (error) {
         return (
-            <Container className="gerenciar-profissionais-container my-5">
-                <Alert variant="danger">
-                    <Alert.Heading>Erro!</Alert.Heading>
-                    <p>{error}</p>
-                    <Button onClick={carregarProfissionais} variant="outline-danger">
-                        Tentar Novamente
-                    </Button>
-                </Alert>
+            <Container className="gerenciar-profissionais-container my-4">
+                <Card className="shadow-lg p-4 border-0 bg-white" style={{ borderRadius: '16px' }}>
+                    <Alert variant="danger" className="mb-0">
+                        <Alert.Heading>Erro!</Alert.Heading>
+                        <p>{error}</p>
+                        <Button onClick={carregarProfissionais} variant="outline-danger">
+                            Tentar Novamente
+                        </Button>
+                    </Alert>
+                </Card>
             </Container>
         );
     }
 
     return (
-            <Container className="gerenciar-profissionais-container my-5">
+        <Container className="gerenciar-profissionais-container my-4">
+            <Card className="shadow-lg p-4 p-md-5 border-0 bg-white" style={{ borderRadius: '16px' }}>
                 <h2 className="text-center mb-5 gerenciar-profissionais-title">GERENCIAR PROFISSIONAIS</h2>
 
-            {profissionais.length === 0 ? (
-                <Alert variant="info" className="text-center">
-                    Nenhum profissional cadastrado no banco de dados.
-                </Alert>
-            ) : (
-                <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-                    {profissionais.map(profissional => (
-                        <Col key={profissional.id}>
-                            <Card className="profissional-card h-100 shadow-sm">
-                                <Card.Body className="d-flex flex-column align-items-center justify-content-between p-3">
-                                    <div className="profissional-icon-container mb-3">
-                                        <i className="bi bi-person-fill gerenciar-icon"></i>
-                                    </div>
-                                    <Card.Title className="text-center mb-3 profissional-name">
-                                        {profissional.name}
-                                    </Card.Title>
-                                    {profissional.cargo && (
-                                        <p className="text-primary text-center small mb-2 fw-bold">
-                                            {profissional.cargo === 'secretario' ? 'Secretário/a' : 
-                                             profissional.cargo === 'conselheiro' ? 'Conselheiro/a' : 
-                                             profissional.cargo}
-                                        </p>
-                                    )}
-                                    {profissional.contato && (
-                                        <p className="text-muted text-center small mb-2">
-                                            {profissional.contato}
-                                        </p>
-                                    )}
-                                    <div className="d-flex w-100 justify-content-center">
-                                        <Button
-                                            variant="outline-success"
-                                            className="edit-button w-100 me-2"
-                                            onClick={() => handleEdit(profissional.id)}
-                                        >
-                                            EDITAR <i className="bi bi-pencil-square ms-1"></i>
-                                        </Button>  
-                                        <Button 
-                                            variant="outline-danger"
-                                            onClick={() => handleDelete(profissional.id)}
-                                            disabled={deletingId === profissional.id}
-                                        >
-                                            {deletingId === profissional.id ? (
-                                                <Spinner
-                                                    as="span"
-                                                    animation="border"
-                                                    size="sm"
-                                                    role="status"
-                                                    aria-hidden="true"
-                                                />
-                                            ) : (
-                                                <i className="bi bi-trash"></i>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
-            )}
-            </Container>
+                {profissionais.length === 0 ? (
+                    <Alert variant="info" className="text-center mb-0">
+                        Nenhum profissional cadastrado no banco de dados.
+                    </Alert>
+                ) : (
+                    <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+                        {profissionais.map(profissional => (
+                            <Col key={profissional.id}>
+                                <Card className="profissional-card h-100 shadow-sm">
+                                    <Card.Body className="d-flex flex-column align-items-center justify-content-between p-3">
+                                        <div className="profissional-icon-container mb-3">
+                                            <i className="bi bi-person-fill gerenciar-icon"></i>
+                                        </div>
+                                        <Card.Title className="text-center mb-3 profissional-name">
+                                            {profissional.name}
+                                        </Card.Title>
+                                        {profissional.cargo && (
+                                            <p className="text-primary text-center small mb-2 fw-bold">
+                                                {profissional.cargo === 'secretario' ? 'Secretário/a' : 
+                                                 profissional.cargo === 'conselheiro' ? 'Conselheiro/a' : 
+                                                 profissional.cargo}
+                                            </p>
+                                        )}
+                                        {profissional.contato && (
+                                            <p className="text-muted text-center small mb-2">
+                                                {profissional.contato}
+                                            </p>
+                                        )}
+                                        <div className="d-flex w-100 justify-content-center">
+                                            <Button
+                                                variant="outline-success"
+                                                className="edit-button w-100 me-2"
+                                                onClick={() => handleEdit(profissional.id)}
+                                            >
+                                                EDITAR <i className="bi bi-pencil-square ms-1"></i>
+                                            </Button>  
+                                            <Button 
+                                                variant="outline-danger"
+                                                onClick={() => handleDelete(profissional.id)}
+                                                disabled={deletingId === profissional.id}
+                                            >
+                                                {deletingId === profissional.id ? (
+                                                    <Spinner
+                                                        as="span"
+                                                        animation="border"
+                                                        size="sm"
+                                                        role="status"
+                                                        aria-hidden="true"
+                                                    />
+                                                ) : (
+                                                    <i className="bi bi-trash"></i>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+                )}
+            </Card>
+        </Container>
     );
 }
 
