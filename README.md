@@ -1,61 +1,131 @@
-Sistema de Gestão do Conselho Tutelar de Panambi/RS
-Este projeto é uma aplicação web desenvolvida em React para auxiliar na gestão das atividades do Conselho Tutelar de Panambi, Rio Grande do Sul. Ele oferece formulários padronizados para registro de denúncias, atendimentos, notificações e termos de aplicação de medidas, além de um painel administrativo para gerenciamento de profissionais.
+# 🛡️ Sistema de Gestão do Conselho Tutelar de Panambi/RS - Front-end
 
-Funcionalidades Principais
-Ficha de Recebimento de Denúncia: Registro detalhado de denúncias recebidas.
+Aplicação web moderna desenvolvida em React para auxiliar na gestão, registro e tramitação das atividades do **Conselho Tutelar de Panambi, Rio Grande do Sul**. A plataforma centraliza o atendimento, denúncias, notificações, aplicação de medidas protetivas, georreferenciamento de ocorrências e trilhas de auditoria, garantindo conformidade com o Estatuto da Criança e do Adolescente (ECA).
 
-Ficha de Atendimento: Documentação de atendimentos realizados.
+---
 
-Notificação: Geração de notificações e suas segundas vias.
+## 📌 Funcionalidades Principais
 
-Termo de Aplicação de Medidas (Pais/Responsáveis): Registro de medidas aplicadas a pais ou responsáveis, conforme o ECA.
+### 📄 Gestão de Documentos e Atendimentos
+- **Ficha de Recebimento de Denúncia:** Registro detalhado de denúncias recebidas com coleta de dados e categorização.
+- **Ficha de Atendimento:** Registro e documentação de atendimentos realizados a crianças, adolescentes e familiares.
+- **Notificação:** Emissão e controle de notificações e suas segundas vias.
+- **Termo de Aplicação de Medidas (Pais/Responsáveis):** Registro formal de medidas aplicadas a pais ou responsáveis, fundamentadas no ECA.
+- **Termo de Aplicação de Medidas (Criança/Adolescente):** Registro e aplicação de medidas protetivas individuais a crianças e adolescentes.
+- **Visualização e Exportação de Documentos:** Consulta centralizada, filtros de busca e geração/impressão de documentos em formato PDF com suporte a assinatura.
 
-Termo de Aplicação de Medidas (Criança/Adolescente): Registro de medidas de proteção aplicadas a crianças ou adolescentes, conforme o ECA.
+### 🗺️ Georreferenciamento e Mapa de Ocorrências
+- **Mapa Interativo (Leaflet):** Visualização geográfica de ocorrências e denúncias registradas na cidade.
+- **Mapa de Calor (Heatmap):** Identificação visual de densidade de denúncias e atendimentos para subsidiar decisões estratégicas e ações preventivas.
 
-Painel Administrativo:
+### 🔒 Autenticação e Controle de Acesso (RBAC)
+- **Login Seguro com JWT:** Autenticação protegida, gestão de sessão e renovação de acesso.
+- **Rotas Protegidas:** Restrição de acesso por papéis de usuário (`admin` e `conselheiro`).
+- **Perfis Personalizados:** Visualização e edição de perfis de Administrador e Conselheiro Tutelar.
 
-Gerenciar Profissionais: Visualização em formato de cards de todos os profissionais cadastrados, com opção de edição.
+### 👥 Gestão de Equipe e Painel Administrativo
+- **Gerenciamento de Profissionais:** Visualização em cards de conselheiros e administradores cadastrados, com opção de edição e inativação.
+- **Cadastro de Novos Profissionais:** Formulário guiado para inclusão de novos membros na equipe.
 
-Cadastrar Novo Profissional: Formulário para inclusão de novos membros na equipe.
+### 📋 Módulo de Auditoria
+- **Trilha de Auditoria e Logs:** Registro e rastreamento de ações realizadas no sistema (criação, edição e exclusão de dados) para garantir transparência, conformidade legal e segurança da informação.
 
-Navegação Intuitiva: Menu principal com barra de pesquisa para fácil acesso aos formulários.
+---
 
-Design Moderno e Responsivo: Interface de usuário limpa, intuitiva e adaptável a diferentes tamanhos de tela, utilizando React e Bootstrap.
+## 🛠️ Tecnologias Utilizadas
 
-Tecnologias Utilizadas
-React.js: Biblioteca JavaScript para construção da interface de usuário.
+- **Core:** [React 19](https://react.dev/) & [Vite 6](https://vitejs.dev/)
+- **Roteamento:** [React Router DOM v7](https://reactrouter.com/)
+- **Estilização e UI:** [Bootstrap 5](https://getbootstrap.com/), [React-Bootstrap](https://react-bootstrap.github.io/) e [React Icons](https://react-icons.github.io/react-icons/)
+- **Mapas e Georreferenciamento:** [Leaflet](https://leafletjs.com/), [React-Leaflet](https://react-leaflet.js.org/) e [Leaflet.heat](https://github.com/Leaflet/Leaflet.heat)
+- **Comunicação HTTP:** [Axios](https://axios-http.com/) com interceptors para tokens de autorização
+- **Geração e Manipulação de PDF:** [jsPDF](https://github.com/parallax/jsPDF) e [pdf-lib](https://pdf-lib.js.org/)
+- **Criptografia / Utilitários:** [node-forge](https://github.com/digitalbazaar/forge)
+- **Containerização:** [Docker](https://www.docker.com/) e Docker Compose
 
-React-Router-DOM: Para gerenciamento de rotas na aplicação single-page.
+---
 
-React-Bootstrap: Componentes Bootstrap reutilizáveis para React, facilitando a estilização e o layout responsivo.
+## 📁 Estrutura do Projeto
 
-Bootstrap CSS: Framework CSS para estilização base.
+```text
+conselho-tutelar-front/
+├── public/                     # Ativos estáticos públicos (logo, favicon)
+├── src/
+│   ├── api/                    # Integração com a API REST (Axios)
+│   │   ├── api.js              # Configuração base e interceptors
+│   │   ├── atendimento.js      # Serviços de atendimentos
+│   │   ├── auditoria.js        # Serviços de trilha de auditoria
+│   │   ├── conselheiros.js     # Serviços de conselheiros e usuários
+│   │   ├── denuncia.js         # Serviços de denúncias
+│   │   ├── documentos.js       # Serviços de documentos
+│   │   ├── marcadores.js       # Serviços de marcadores georreferenciados
+│   │   ├── notificacao.js      # Serviços de notificações
+│   │   └── termosMedidas.js    # Serviços de termos de medidas
+│   ├── assets/                 # Imagens e identidades visuais internas
+│   ├── components/             # Componentes globais e formulários
+│   │   ├── Assinatura/         # Componente de assinatura eletrônica
+│   │   ├── documentos/         # Componentes de formulários padronizados
+│   │   ├── NavBar.jsx          # Barra de navegação principal
+│   │   └── ProtectedRoute.jsx  # Controle de acesso e proteção de rotas
+│   ├── context/                # Contextos React (AuthContext para autenticação)
+│   ├── pages/                  # Telas e páginas completas
+│   │   ├── auditoria/          # Painel e listagem de auditoria
+│   │   ├── cadastrarProfissionais/ # Cadastro de novos profissionais
+│   │   ├── error/              # Página de erro / 404
+│   │   ├── gerenciarProfissionais/ # Listagem e edição de membros da equipe
+│   │   ├── home/               # Estrutura base da dashboard
+│   │   ├── mapas/              # Visualização de mapa e mapa de calor
+│   │   ├── menu/               # Menu inicial com atalhos de navegação
+│   │   ├── perfilAdministrador/# Gerenciamento de perfil do administrador
+│   │   ├── perfilConselheiro/  # Gerenciamento de perfil do conselheiro
+│   │   └── visualizarDocumentos/ # Consulta, filtros e exportação em PDF
+│   ├── utils/                  # Utilitários, geração de PDF e mocks
+│   ├── App.jsx                 # Componente auxiliar de rotas/aplicação
+│   ├── Login.jsx               # Tela de autenticação e login
+│   ├── index.css               # Estilos globais e tokens de cores
+│   └── main.jsx                # Ponto de entrada do React e RouterProvider
+├── .dockerignore               # Arquivos ignorados pelo Docker
+├── .env.example                # Exemplo de configuração de variáveis de ambiente
+├── .gitignore                  # Arquivos ignorados pelo Git
+├── docker-compose.yml          # Orquestração do ambiente com Docker
+├── Dockerfile                  # Especificação da imagem Docker de desenvolvimento
+├── package.json                # Dependências e scripts do projeto
+└── vite.config.js              # Configuração do bundler Vite
+```
 
-Bootstrap Icons: Biblioteca de ícones para elementos visuais.
+---
 
-CSS Personalizado: Estilos adicionais para atender ao design específico do projeto.
+## ⚙️ Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto copiando o modelo `.env.example`:
+
+```env
+# URL base da API do backend
+VITE_API_URL=http://localhost:3000
+```
+
+---
 
 ## 🚀 Como Rodar o Projeto com Docker (Recomendado)
 
-Com ambos os repositórios (`conselho-tutelar-front` e `conselho-tutelar-back`) clonados lado a lado, você pode subir toda a aplicação (Front-end, Back-end API e MySQL) diretamente daqui:
+Com ambos os repositórios (`conselho-tutelar-front` e `conselho-tutelar-back`) clonados lado a lado no mesmo diretório, você pode subir toda a aplicação (Front-end, Back-end API e MySQL) diretamente:
 
 ```bash
 npm run docker:up
 ```
 *(Ou diretamente com: `docker compose up -d`)*
 
-Isso irá subir:
-- **Front-end (React/Vite):** http://localhost:5173 (com hot-reload)
+Isso irá inicializar:
+- **Front-end (React/Vite):** http://localhost:5173 (com hot-reload ativado)
 - **Back-end API (Node.js):** http://localhost:3000
 - **Banco de Dados (MySQL 8.0):** porta `3306`
 
-Para acompanhar os logs:
+### Comandos Docker úteis:
 ```bash
+# Acompanhar os logs dos containers em tempo real
 npm run docker:logs
-```
 
-Para parar todos os containers:
-```bash
+# Parar e remover todos os containers
 npm run docker:down
 ```
 
@@ -64,68 +134,27 @@ npm run docker:down
 ## 💻 Como Rodar o Projeto Localmente (Sem Docker)
 
 ### Pré-requisitos
-- Node.js (versão 18 ou superior recomendada)
-- npm ou Yarn
-- Back-end em execução (via Docker ou local)
+- [Node.js](https://nodejs.org/) (versão 18 ou superior)
+- Gerenciador de pacotes `npm` ou `yarn`
+- Back-end em execução (via Docker ou localmente na porta 3000)
 
-### Instalação
+### 1. Instalação das Dependências
 ```bash
 npm install
 ```
 
-### Executando a Aplicação
+### 2. Configuração do Ambiente
+Certifique-se de que o arquivo `.env` existe e que a variável `VITE_API_URL` aponta para o endereço correto do backend.
+
+### 3. Execução em Modo de Desenvolvimento
 ```bash
 npm run dev
 ```
-A aplicação estará disponível em `http://localhost:5173`.
+Acesse a aplicação no navegador em: `http://localhost:5173`.
 
-
-Estrutura do Projeto
-.
-├── public/
-│   └── logo.png        # Logo do Conselho Tutelar
-├── src/
-│   ├── assets/
-│   │   └── logo.png    # Imagens e outros ativos
-│   ├── components/
-│   │   └── NavBar.jsx  # Componente de barra de navegação (se houver)
-│   ├── pages/          # Componentes de páginas completas
-│   │   ├── cadastrarProfissionais/
-│   │   │   ├── CadastrarProfissional.jsx
-│   │   │   └── CadastrarProfissional.css
-│   │   ├── documentos/ # Agrupamento para documentos/formulários
-│   │   │   ├── ficha-atendimento/
-│   │   │   │   ├── FichaAtendimento.jsx
-│   │   │   │   └── FichaAtendimento.css
-│   │   │   ├── notificacao/
-│   │   │   │   ├── Notificacao.jsx
-│   │   │   │   └── Notificacao.css
-│   │   │   ├── recebimento-denuncia/
-│   │   │   │   ├── RecebimentoDenuncia.jsx
-│   │   │   │   └── RecebimentoDenuncia.css
-│   │   │   ├── termo-medidas-crianca/
-│   │   │   │   ├── TermoMedidasCrianca.jsx
-│   │   │   │   └── TermoMedidasCrianca.css
-│   │   │   └── termo-medidas-responsaveis/
-│   │   │       ├── TermoMedidasResponsaveis.jsx
-│   │   │       └── TermoMedidasResponsaveis.css
-│   │   │   └── style.css # CSS comum para documentos/formulários? (verificar uso)
-│   │   ├── error/
-│   │   │   └── ErrorPage.jsx
-│   │   ├── gerenciarProfissionais/
-│   │   │   ├── GerenciarProfissionais.jsx
-│   │   │   └── GerenciarProfissionais.css
-│   │   ├── home/
-│   │   │   └── Home.jsx # Página inicial ou Dashboard
-│   │   ├── menu/         # Menu principal da aplicação (DashboardMenu renomeado?)
-│   │   │   ├── Menu.jsx
-│   │   │   └── Menu.css
-│   │   └── perfilAdministrador/
-│   │       ├── PerfilAdministrador.jsx
-│   │       └── PerfilAdministrador.css
-│   ├── App.jsx           # Componente principal que define as rotas
-│   ├── index.css         # CSS global principal
-│   ├── Login.jsx         # Componente de login
-│   ├── Login.css
-│   └── main.jsx          # Ponto de entrada da aplicação React (antigo index.js)
-├── package.json          # Dependências e scripts do projeto
+### 4. Build de Produção
+Para compilar o pacote de produção otimizado:
+```bash
+npm run build
+```
+Os arquivos finais para publicação serão gerados no diretório `dist/`.

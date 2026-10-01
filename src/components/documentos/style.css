@@ -25,7 +25,7 @@ h2 {
 }
 
 h2 i {
-  color: #28a745; /* Cor verde para o ícone */
+  color: #3159A3 !important; /* Mesma cor azul da fonte */
 }
 
 .text-muted {

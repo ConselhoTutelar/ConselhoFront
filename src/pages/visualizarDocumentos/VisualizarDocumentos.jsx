@@ -28,14 +28,30 @@ function VisualizarDocumentos() {
   const carregarDocumentos = async () => {
     try {
       setLoading(true);
+      setError(null);
       const dados = await buscarTodosDocumentos();
-      const dadosComFallback = aplicarFallbackDocumentos(dados || {});
-      setDocumentos(dadosComFallback);
-      setError(null);
+      const totalDocsReais = (dados?.denuncias?.length || 0) +
+                             (dados?.atendimentos?.length || 0) +
+                             (dados?.notificacoes?.length || 0) +
+                             (dados?.termosMedidasMenor?.length || 0) +
+                             (dados?.termosMedidasResponsavel?.length || 0);
+
+      if (totalDocsReais > 0) {
+        setDocumentos({
+          denuncias: dados.denuncias || [],
+          atendimentos: dados.atendimentos || [],
+          notificacoes: dados.notificacoes || [],
+          termosMedidasMenor: dados.termosMedidasMenor || [],
+          termosMedidasResponsavel: dados.termosMedidasResponsavel || []
+        });
+      } else {
+        // Se a base de dados ainda não tiver nenhum registro, usa dados de demonstração
+        setDocumentos(documentosFalsos);
+      }
     } catch (err) {
-      console.error('Erro ao carregar documentos. Usando dados falsos:', err);
+      console.error('Erro ao carregar documentos do banco:', err);
+      setError('Aviso: Não foi possível conectar ao banco de dados (' + err.message + '). Exibindo dados em cache.');
       setDocumentos(documentosFalsos);
-      setError(null);
     } finally {
       setLoading(false);
     }
@@ -126,12 +142,11 @@ function VisualizarDocumentos() {
   }
 
   return (
-    <div className="visualizar-documentos-background">
       <Container className="visualizar-documentos-container">
         <Card className="visualizar-documentos-card">
           <Card.Header className="visualizar-documentos-header">
-            <h2 className="visualizar-documentos-title mb-0 text-white">
-              <i className="bi bi-file-earmark-text me-2 text-white"></i>
+            <h2 className="visualizar-documentos-title mb-0">
+              <i className="bi bi-file-earmark-text me-2"></i>
               Documentos Salvos
             </h2>
           </Card.Header>
@@ -264,7 +279,7 @@ function VisualizarDocumentos() {
           </Card.Body>
         </Card>
       </Container>
-    </div>
+    
   );
 }
 

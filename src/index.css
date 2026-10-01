@@ -1,129 +1,196 @@
-.btn-primary {
+/* ==========================================================================
+   Estilos Globais e Layout do Sistema - Conselho Tutelar Panambi/RS
+   ========================================================================== */
+
+:root {
+  --primary-color: #3159A3;
+  --primary-hover: #264785;
+  --sidebar-width: 290px;
+  --header-height: 70px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #3159A3;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background-color: #3159A3;
 }
 
-.hamburger-toggle {
-  border: none;
-  background: transparent;
-  color: #3159A3;
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+/* ==========================================================================
+   Estrutura do Layout Principal (App Layout)
+   ========================================================================== */
+
+.app-wrapper {
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  gap: 5px;
-  padding: 0.25rem;
+  background-color: #3159A3;
 }
 
-.hamburger-toggle:focus {
-  outline: none;
-}
-
-.hamburger-line {
-  display: block;
-  width: 26px;
-  height: 3px;
-  border-radius: 999px;
-  background: #3159A3;
+/* Header Fixo Superior */
+.app-top-header {
+  height: var(--header-height);
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 1040;
 }
 
 .logo-center-link img {
   display: block;
-  margin: 0 auto 0.35rem auto;
+  margin: 0 auto;
+  transition: transform 0.2s ease;
 }
 
-.nav-bar-inner {
-  gap: 1rem;
+.logo-center-link:hover img {
+  transform: scale(1.03);
 }
 
-.nav-side {
+.menu-toggle-btn {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+  border-color: #cbd5e1 !important;
+}
+
+.menu-toggle-btn:hover {
+  background-color: #f1f5f9;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color);
+}
+
+.menu-toggle-btn.active {
+  background-color: #eff6ff;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color);
+}
+
+/* Área de Conteúdo da Página */
+.app-main-content {
+  margin-top: var(--header-height);
   flex: 1;
+  width: 100%;
+  min-height: calc(100vh - var(--header-height));
+  background-color: #3159A3;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-center {
-  flex: 0;
-}
 
-.header-text p {
-  letter-spacing: 0.08em;
-}
+/* ==========================================================================
+   Menu Lateral Fixo & Responsivo (App Sidebar / Drawer)
+   ========================================================================== */
 
-.hamburger-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease;
-  z-index: 1039;
-}
-
-.hamburger-overlay.show {
-  opacity: 1;
-  visibility: visible;
-}
-
-.hamburger-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: min(360px, 90vw);
-  background: #fff;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 1040;
+.app-sidebar {
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
-  gap: 1.5rem;
+  background: #ffffff;
+}
+
+.sidebar-header {
+  background: #f8fafc;
+  min-height: 60px;
+}
+
+.btn-close-sidebar {
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.btn-close-sidebar:hover {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+.sidebar-content-scroll {
+  flex: 1;
   overflow-y: auto;
 }
 
-.hamburger-drawer.open {
-  transform: translateX(0);
+/* Custom Scrollbar */
+.sidebar-content-scroll::-webkit-scrollbar {
+  width: 5px;
 }
 
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 1rem;
+.sidebar-content-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.sidebar-content-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.sidebar-content-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .drawer-section {
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem;
+  background: #ffffff;
 }
 
 .drawer-title {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6b7280;
-  margin-bottom: 0.75rem;
+  letter-spacing: 0.06em;
+  color: #64748b;
 }
 
 .drawer-link {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
   text-decoration: none;
-  color: #1f2937;
+  color: #334155;
   display: flex;
   align-items: center;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: background 0.2s ease, border-color 0.2s ease;
-  background-color: #fff;
+  transition: all 0.15s ease;
+  background: transparent;
   cursor: pointer;
   width: 100%;
 }
 
 .drawer-link:hover {
-  background: #f8fafc;
-  border-color: #3159A3;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.drawer-link.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  border-color: #bfdbfe;
+  border-left: 3px solid var(--primary-color);
 }
 
 .drawer-link:focus {
@@ -131,35 +198,151 @@
 }
 
 .drawer-link-danger {
-  border-color: #dc2626;
+  border: 1px solid #fecaca;
   color: #dc2626;
+  background: #fff5f5;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 .drawer-link-danger:hover {
   background: #fee2e2;
   border-color: #dc2626;
+  color: #991b1b;
 }
 
 .drawer-documents {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
 .drawer-document {
   text-align: left;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
   background: #f8fafc;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: all 0.15s ease;
   display: block;
-  color: #1f2937;
+  color: #1e293b;
   text-decoration: none;
 }
 
 .drawer-document:hover {
-  border-color: #3159A3;
-  background: #fff;
+  border-color: var(--primary-color);
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.drawer-document.active {
+  background: #eff6ff;
+  border-color: var(--primary-color);
+  border-left: 3px solid var(--primary-color);
+}
+
+/* ==========================================================================
+   Comportamento em Desktop (Telas Grandes >= 992px)
+   Menu Fixo sem bloquear conteúdo e sem overlay
+   ========================================================================== */
+
+@media (min-width: 992px) {
+  /* Quando o menu está aberto, desloca o conteúdo principal para ficar lado a lado */
+  .app-wrapper.sidebar-open .app-main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+
+  /* Quando o menu está recolhido/fechado, o conteúdo toma 100% da tela */
+  .app-wrapper.sidebar-collapsed .app-main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* O sidebar fica fixo à esquerda, exatamente abaixo da barra superior */
+  .app-sidebar {
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--header-height));
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1030;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* No desktop NÃO existe overlay escuro, permitindo total interação com a tela */
+  .hamburger-overlay {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   Comportamento em Mobile / Tablets (< 992px)
+   Menu estilo Gaveta Flutuante (Drawer) com Overlay
+   ========================================================================== */
+
+@media (max-width: 991.98px) {
+  .app-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(320px, 85vw);
+    height: 100vh;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1060;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .hamburger-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 1050;
+  }
+
+  .hamburger-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* ==========================================================================
+   Padronização Global de Ícones com o Azul das Fontes (#3159A3)
+   ========================================================================== */
+
+h1 i, h2 i, h3 i, h4 i, h5 i, h6 i {
+  color: var(--primary-color) !important;
+}
+
+.visualizar-documentos-title i,
+.gerenciar-profissionais-title i,
+.cadastrar-profissional-title i,
+.dashboard-title i,
+.card-header i,
+.form-card h2 i,
+.search-input-group .input-group-text i {
+  color: var(--primary-color) !important;
 }

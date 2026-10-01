@@ -24,9 +24,13 @@
     margin-bottom: 0;
 }
 
+.visualizar-documentos-title i {
+    color: #3159A3 !important;
+}
+
 .visualizar-documentos-header {
-    background-color: #3159A3; /* Azul primário */
-    color: white;
+    background-color: #F8F9FA; /* Azul primário */
+    color: #3159A3;
     padding: 1rem 1.5rem;
     border-radius: 15px 15px 0 0; /* Bordas arredondadas apenas no topo */
     border-bottom: 1px solid #e0e0e0; /* Borda inferior sutil */

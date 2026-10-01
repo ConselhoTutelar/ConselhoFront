@@ -105,6 +105,18 @@ function CadastrarProfissional() {
                 cargoForm = 'Conselheiro/a';
             }
 
+            let dataNascFormatada = '';
+            if (conselheiro.data_nascimento) {
+                if (typeof conselheiro.data_nascimento === 'string') {
+                    dataNascFormatada = conselheiro.data_nascimento.substring(0, 10);
+                } else {
+                    const d = new Date(conselheiro.data_nascimento);
+                    if (!isNaN(d.getTime())) {
+                        dataNascFormatada = d.toISOString().split('T')[0];
+                    }
+                }
+            }
+
             const enderecoForm = parseEnderecoCompleto(conselheiro.endereco);
 
             setFormData({
@@ -112,7 +124,7 @@ function CadastrarProfissional() {
                 cargo: cargoForm,
                 cpf: conselheiro.cpf ? String(conselheiro.cpf) : '',
                 rg: conselheiro.rg ? String(conselheiro.rg) : '',
-                dataNascimento: conselheiro.data_nascimento || '',
+                dataNascimento: dataNascFormatada,
                 rua: enderecoForm.rua,
                 numero: enderecoForm.numero,
                 bairro: enderecoForm.bairro,
@@ -283,7 +295,7 @@ function CadastrarProfissional() {
                                 </Col>
                             </Form.Group>
 
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCargo">
+                            <Form.Group as={Row} className="mb-3 align-items-center">
                                 <Form.Label column sm="3">Cargo:</Form.Label>
                                 <Col sm="9">
                                     <Form.Check
@@ -431,7 +443,7 @@ function CadastrarProfissional() {
                                 </Col>
                             </Form.Group>
 
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCelular">
+                            <Form.Group as={Row} className="mb-3 align-items-center">
                                 <Form.Label column sm="3">Celular:</Form.Label>
                                 <Col sm="9">
                                     <InputGroup>
@@ -462,15 +474,14 @@ function CadastrarProfissional() {
                                 </Col>
                             </Form.Group>
 
-                            <Form.Group as={Row} className="mb-4 align-items-center" controlId="formFotoPerfil">
+                            <Form.Group as={Row} className="mb-4 align-items-center" controlId="uploadFotoPerfil">
                                 <Form.Label column sm="3">Foto de Perfil:</Form.Label>
                                 <Col sm="9">
                                     <Form.Control
                                         type="file"
                                         name="fotoPerfil"
                                         onChange={handleChange}
-                                        className="d-none" // Esconde o input de arquivo padrão
-                                        id="uploadFotoPerfil"
+                                        className="d-none"
                                         disabled={loadingData}
                                     />
                                     <Button
