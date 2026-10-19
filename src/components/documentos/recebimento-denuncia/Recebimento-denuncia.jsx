@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../style.css';
 import { assinaturaPadrao } from '../../../utils/assinaturaPadrao';
+import { obterHoraAtual } from '../../../utils/dataHora';
 import { geocodificarEnderecoAPI } from '../../../api/marcadores';
 import { buscarConselheiros } from '../../../api/conselheiros';
 
@@ -82,7 +83,7 @@ function RecebimentoDenuncia() {
 
   const [formData, setFormData] = useState({
     dataDenuncia: '',
-    horaDenuncia: '',
+    horaDenuncia: obterHoraAtual(),
     tipoPessoa: 'identificada',
     identificacaoDenunciante: '',
     fatos: '',
@@ -206,7 +207,7 @@ function RecebimentoDenuncia() {
       // Reset form
       setFormData({
         dataDenuncia: '',
-        horaDenuncia: '',
+        horaDenuncia: obterHoraAtual(),
         tipoPessoa: 'identificada',
         identificacaoDenunciante: '',
         fatos: '',

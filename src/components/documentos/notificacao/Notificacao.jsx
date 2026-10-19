@@ -3,11 +3,12 @@ import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../style.css'; // Reutiliza o mesmo arquivo CSS para a estilização
 import { assinaturaPadrao } from '../../../utils/assinaturaPadrao';
+import { obterHoraAtual } from '../../../utils/dataHora';
 
 function Notificacao() {
   const [formData, setFormData] = useState({
     dataNotificacao: '',
-    horaNotificacao: '',
+    horaNotificacao: obterHoraAtual(),
     nomeQuemRecebeu: '',
     segundaViaConvocacao: '' // Este campo é para o texto da segunda via da convocação
   });
@@ -31,7 +32,7 @@ function Notificacao() {
       // Reset form
       setFormData({
         dataNotificacao: '',
-        horaNotificacao: '',
+        horaNotificacao: obterHoraAtual(),
         nomeQuemRecebeu: '',
         segundaViaConvocacao: ''
       });

@@ -3,11 +3,12 @@ import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../style.css'; // Reutiliza o mesmo arquivo CSS para a estilização
 import { assinaturaPadrao } from '../../../utils/assinaturaPadrao';
+import { obterHoraAtual } from '../../../utils/dataHora';
 
 function FichaAtendimento() {
   const [formData, setFormData] = useState({
     dataAtendimento: '',
-    horaAtendimento: '',
+    horaAtendimento: obterHoraAtual(),
     direitoViolado: '',
     relatos: '',
     quemEhOViolador: ''
@@ -32,7 +33,7 @@ function FichaAtendimento() {
       // Reset form
       setFormData({
         dataAtendimento: '',
-        horaAtendimento: '',
+        horaAtendimento: obterHoraAtual(),
         direitoViolado: '',
         relatos: '',
         quemEhOViolador: ''
