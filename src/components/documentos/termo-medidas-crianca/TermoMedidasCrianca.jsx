@@ -3,11 +3,12 @@ import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../style.css'; // Reutiliza o mesmo arquivo CSS para a estilização
 import { assinaturaPadrao } from '../../../utils/assinaturaPadrao';
+import { obterHoraAtual } from '../../../utils/dataHora';
 
 function TermoMedidasCriancaAdolescente() {
   const [formData, setFormData] = useState({
     dataTermo: '',
-    horaTermo: '',
+    horaTermo: obterHoraAtual(),
     aplicacaoMedidasTexto: '',
     // Checkboxes para as medidas
     medidaI: false,
@@ -36,7 +37,7 @@ function TermoMedidasCriancaAdolescente() {
       // Reset form
       setFormData({
         dataTermo: '',
-        horaTermo: '',
+        horaTermo: obterHoraAtual(),
         aplicacaoMedidasTexto: '',
         medidaI: false,
         medidaII: false,
