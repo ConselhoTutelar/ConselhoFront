@@ -34,18 +34,18 @@ const NavBar = ({ menuAberto, toggleMenu, fecharMenu }) => {
     const linksBasicos = [
         { label: "Menu Principal", to: "/home", icon: IoHome },
         { label: "Mapas", to: "/home/mapas", icon: IoMap },
-        { label: "Documentos Salvos", to: "/home/visualizar-documentos", icon: IoDocumentText },
+        { label: "Documentos Salvos", to: "/home/documentos", icon: IoDocumentText },
     ];
 
     const linksAdmin = [
         { label: "Trilha de Auditoria", to: "/home/auditoria", icon: IoShieldCheckmark, badge: "Zero-Trust" },
-        { label: "Gerenciar Profissionais", to: "/home/gerenciar-profissionais", icon: IoPeople },
-        { label: "Cadastrar Profissionais", to: "/home/cadastrar-profissional", icon: IoAddCircle },
-        { label: "Seu Perfil", to: "/home/perfil-administrador", icon: IoPerson },
+        { label: "Gerenciar Profissionais", to: "/home/profissionais", icon: IoPeople },
+        { label: "Cadastrar Profissionais", to: "/home/cadastro", icon: IoAddCircle },
+        { label: "Seu Perfil", to: "/home/administrador", icon: IoPerson },
     ];
 
     const linksConselheiro = [
-        { label: "Meu Perfil", to: "/home/perfil-conselheiro", icon: IoPerson },
+        { label: "Meu Perfil", to: "/home/perfil", icon: IoPerson },
     ];
 
     const profileLinks = [

@@ -68,7 +68,7 @@ const router = createBrowserRouter([
         element: <TermoMedidasCriancaAdolescente />,
       },
       {
-        path: "perfil-administrador",
+        path: "administrador",
         element: (
           <ProtectedRoute roles={['admin']}>
             <PerfilAdministrador />
@@ -76,7 +76,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "gerenciar-profissionais",
+        path: "profissionais",
         element: (
           <ProtectedRoute roles={['admin']}>
             <GerenciarProfissionais />
@@ -84,7 +84,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "cadastrar-profissional",
+        path: "cadastro",
         element: (
           <ProtectedRoute roles={['admin']}>
             <CadastrarProfissional />
@@ -100,7 +100,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "perfil-conselheiro",
+        path: "perfil",
         element: (
           <ProtectedRoute roles={['conselheiro']}>
             <PerfilConselheiro />
@@ -108,7 +108,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "visualizar-documentos",
+        path: "documentos",
         element: <VisualizarDocumentos />,
       },
       {
