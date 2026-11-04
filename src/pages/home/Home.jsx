@@ -45,12 +45,12 @@ function Home() {
   };
 
   useEffect(() => {
-    if (!user) {
+    if (!user || user.precisaTrocarSenha) {
       navigate("/");
     }
   }, [user, navigate]);
 
-  if (!user) {
+  if (!user || user.precisaTrocarSenha) {
     return null;
   }
 

@@ -60,7 +60,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('conselho:user', JSON.stringify(response.user));
         setToken(response.token);
         setUser(response.user);
-        return { sucesso: true };
+        return {
+          sucesso: true,
+          precisaTrocarSenha: Boolean(response.user.precisaTrocarSenha)
+        };
       }
 
       return {
@@ -72,6 +75,36 @@ export const AuthProvider = ({ children }) => {
       return {
         sucesso: false,
         mensagem: error.message || 'Erro ao conectar ao serviço de autenticação.'
+      };
+    }
+  };
+
+  const alterarSenha = async (senhaAtual, novaSenha) => {
+    try {
+      const response = await apiRequest('/auth/alterar-senha', {
+        method: 'POST',
+        body: JSON.stringify({
+          senhaAtual: senhaAtual.trim(),
+          novaSenha: novaSenha.trim()
+        })
+      });
+
+      if (response && response.token && response.user) {
+        localStorage.setItem('conselho:token', response.token);
+        localStorage.setItem('conselho:user', JSON.stringify(response.user));
+        setToken(response.token);
+        setUser(response.user);
+        return { sucesso: true };
+      }
+
+      return {
+        sucesso: false,
+        mensagem: response?.message || 'Não foi possível alterar a senha.'
+      };
+    } catch (error) {
+      return {
+        sucesso: false,
+        mensagem: error.message || 'Erro ao alterar a senha.'
       };
     }
   };
@@ -95,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       token,
       loading,
       login,
+      alterarSenha,
       logout,
       isAuthenticated: !!user && !!token
     }),

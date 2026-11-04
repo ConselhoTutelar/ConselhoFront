@@ -23,6 +23,12 @@ export async function atualizarConselheiro(id, dados) {
   });
 }
 
+export async function resetarSenhaConselheiro(id) {
+  return await apiRequest(`/conselheiros/${id}/resetar-senha`, {
+    method: "POST"
+  });
+}
+
 export async function deletarConselheiro(id) {
   return await apiRequest(`/conselheiros/${id}`, {
     method: "DELETE",

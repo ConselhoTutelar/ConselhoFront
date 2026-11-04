@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, InputGroup, FormControl, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, InputGroup, FormControl, Alert, Spinner, Modal, Badge } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './CadastrarProfissional.css';
 import { criarConselheiro, buscarConselheiroPorId, atualizarConselheiro } from '../../api/conselheiros';
@@ -58,7 +58,7 @@ function CadastrarProfissional() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const idEdicao = searchParams.get('id');
-    const [isEditMode, setIsEditMode] = useState(!!idEdicao);
+    const [isEditMode] = useState(!!idEdicao);
     const [formData, setFormData] = useState({
         nome: '',
         cargo: '', // 'Secretário/a' ou 'Conselheiro/a'
@@ -72,21 +72,23 @@ function CadastrarProfissional() {
         celularDDD: '',
         celularNumero: '',
         nacionalidade: '',
-        fotoPerfil: null, // Para armazenar o arquivo da imagem
+        fotoPerfil: null,
     });
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
-    // Carregar dados do conselheiro se estiver em modo de edição
+    // Credenciais geradas automaticamente após o cadastro
+    const [credenciaisGeradas, setCredenciaisGeradas] = useState(null);
+    const [copiado, setCopiado] = useState(false);
+
     const carregarDadosConselheiro = async (id) => {
         try {
             setLoadingData(true);
             setError(null);
             const conselheiro = await buscarConselheiroPorId(id);
-            
-            // Extrair DDD e número do contato se existir
+
             let celularDDD = '';
             let celularNumero = '';
             if (conselheiro.contatoConselheiro) {
@@ -97,7 +99,6 @@ function CadastrarProfissional() {
                 }
             }
 
-            // Converter cargo do ENUM para o formato do formulário
             let cargoForm = '';
             if (conselheiro.cargo === 'secretario') {
                 cargoForm = 'Secretário/a';
@@ -142,7 +143,6 @@ function CadastrarProfissional() {
         }
     };
 
-    // Carregar dados do conselheiro se estiver em modo de edição
     useEffect(() => {
         if (idEdicao) {
             carregarDadosConselheiro(idEdicao);
@@ -155,7 +155,7 @@ function CadastrarProfissional() {
         if (type === 'file') {
             setFormData(prevState => ({
                 ...prevState,
-                [name]: files[0] // Pega o primeiro arquivo selecionado
+                [name]: files[0]
             }));
         } else {
             setFormData(prevState => ({
@@ -165,6 +165,21 @@ function CadastrarProfissional() {
         }
     };
 
+    const handleCopiarCredenciais = () => {
+        if (!credenciaisGeradas) return;
+        const texto = [
+            `Conselho Tutelar de Panambi/RS - Credenciais de 1º Acesso`,
+            `Profissional: ${credenciaisGeradas.nome}`,
+            `Usuário (Login): ${credenciaisGeradas.username}`,
+            `Matrícula: ${credenciaisGeradas.matricula}`,
+            `Senha Temporária: ${credenciaisGeradas.senhaTemporaria}`,
+            `* Obs: No primeiro acesso, o sistema solicitará a troca por uma senha pessoal.`
+        ].join('\n');
+        navigator.clipboard.writeText(texto);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 3000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -172,7 +187,6 @@ function CadastrarProfissional() {
         setSuccess(false);
 
         try {
-            // Converter cargo para o formato do ENUM do banco de dados
             let cargoEnum = null;
             if (formData.cargo === 'Secretário/a') {
                 cargoEnum = 'secretario';
@@ -187,7 +201,6 @@ function CadastrarProfissional() {
                 cidade: formData.cidade,
             });
 
-            // Preparar dados para enviar ao backend
             const dadosConselheiro = {
                 nome: formData.nome,
                 cargo: cargoEnum,
@@ -198,22 +211,27 @@ function CadastrarProfissional() {
                 celularDDD: formData.celularDDD,
                 celularNumero: formData.celularNumero,
                 nacionalidade: formData.nacionalidade || null,
-                // Foto será implementada depois se necessário
                 foto: null
             };
 
             if (isEditMode && idEdicao) {
-                // Atualizar conselheiro existente
                 await atualizarConselheiro(idEdicao, dadosConselheiro);
                 setSuccess(true);
-                alert('Profissional atualizado com sucesso!');
+                setTimeout(() => {
+                    navigate('/home/gerenciar-profissionais');
+                }, 1500);
             } else {
-                // Criar novo conselheiro
-                await criarConselheiro(dadosConselheiro);
+                const res = await criarConselheiro(dadosConselheiro);
                 setSuccess(true);
-                alert('Profissional cadastrado com sucesso!');
-                
-                // Limpar formulário apenas se for criação
+
+                if (res && res.credenciaisAcesso) {
+                    setCredenciaisGeradas({
+                        nome: formData.nome,
+                        cargo: formData.cargo || 'Conselheiro/a',
+                        ...res.credenciaisAcesso
+                    });
+                }
+
                 setFormData({
                     nome: '',
                     cargo: '',
@@ -230,11 +248,6 @@ function CadastrarProfissional() {
                     fotoPerfil: null,
                 });
             }
-
-            // Redirecionar para gerenciar profissionais após 2 segundos
-            setTimeout(() => {
-                navigate('/home/gerenciar-profissionais');
-            }, 2000);
         } catch (err) {
             console.error('Erro ao salvar profissional:', err);
             setError(err.message || 'Erro ao salvar profissional. Verifique se o servidor está rodando.');
@@ -248,293 +261,367 @@ function CadastrarProfissional() {
     };
 
     return (
-            <Container className="cadastrar-profissional-container my-5">
-                <Card className="cadastrar-profissional-card shadow-lg">
-                    <Card.Body className="p-4">
-                        <h2 className="text-center mb-5 cadastrar-profissional-title">
-                            {isEditMode ? 'EDITAR PROFISSIONAL' : 'CADASTRAR NOVO PROFISSIONAL'}
-                        </h2>
+        <Container className="cadastrar-profissional-container my-5">
+            <Card className="cadastrar-profissional-card shadow-lg">
+                <Card.Body className="p-4">
+                    <h2 className="text-center mb-2 cadastrar-profissional-title">
+                        {isEditMode ? 'EDITAR PROFISSIONAL' : 'CADASTRAR NOVO PROFISSIONAL'}
+                    </h2>
+                    {!isEditMode && (
+                        <p className="text-center text-muted small mb-4">
+                            <i className="bi bi-shield-check me-1 text-primary"></i>
+                            O login de acesso e uma senha temporária de 1º acesso serão gerados automaticamente ao concluir o cadastro.
+                        </p>
+                    )}
 
-                        {error && (
-                            <Alert variant="danger" className="mb-4">
-                                <Alert.Heading>Erro!</Alert.Heading>
-                                <p>{error}</p>
-                            </Alert>
-                        )}
+                    {error && (
+                        <Alert variant="danger" className="mb-4">
+                            <Alert.Heading>Erro!</Alert.Heading>
+                            <p className="mb-0">{error}</p>
+                        </Alert>
+                    )}
 
-                        {success && (
-                            <Alert variant="success" className="mb-4">
-                                <Alert.Heading>Sucesso!</Alert.Heading>
-                                <p>{isEditMode ? 'Profissional atualizado com sucesso! Redirecionando...' : 'Profissional cadastrado com sucesso! Redirecionando...'}</p>
-                            </Alert>
-                        )}
+                    {success && isEditMode && (
+                        <Alert variant="success" className="mb-4">
+                            <Alert.Heading>Sucesso!</Alert.Heading>
+                            <p className="mb-0">Profissional atualizado com sucesso! Redirecionando...</p>
+                        </Alert>
+                    )}
 
-                        {loadingData && (
-                            <div className="text-center mb-4">
-                                <Spinner animation="border" role="status">
-                                    <span className="visually-hidden">Carregando dados...</span>
-                                </Spinner>
-                                <p className="mt-2">Carregando dados do profissional...</p>
-                            </div>
-                        )}
+                    {loadingData && (
+                        <div className="text-center mb-4">
+                            <Spinner animation="border" role="status">
+                                <span className="visually-hidden">Carregando dados...</span>
+                            </Spinner>
+                            <p className="mt-2">Carregando dados do profissional...</p>
+                        </div>
+                    )}
 
-                        <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit}>
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNome">
+                            <Form.Label column sm="3">Nome:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="nome"
+                                    value={formData.nome}
+                                    onChange={handleChange}
+                                    placeholder="Nome completo do profissional"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
 
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNome">
-                                <Form.Label column sm="3">Nome:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
+                        <Form.Group as={Row} className="mb-3 align-items-center">
+                            <Form.Label column sm="3">Cargo:</Form.Label>
+                            <Col sm="9">
+                                <Form.Check
+                                    inline
+                                    type="radio"
+                                    label="Secretário/a (Perfil Admin)"
+                                    name="cargo"
+                                    id="cargoSecretaria"
+                                    value="Secretário/a"
+                                    checked={formData.cargo === 'Secretário/a'}
+                                    onChange={handleChange}
+                                    disabled={loadingData}
+                                    required
+                                />
+                                <Form.Check
+                                    inline
+                                    type="radio"
+                                    label="Conselheiro/a Tutelar"
+                                    name="cargo"
+                                    id="cargoConselheira"
+                                    value="Conselheiro/a"
+                                    checked={formData.cargo === 'Conselheiro/a'}
+                                    onChange={handleChange}
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCPF">
+                            <Form.Label column sm="3">CPF:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="cpf"
+                                    value={formData.cpf}
+                                    onChange={handleChange}
+                                    placeholder="Ex: 000.000.000-00"
+                                    maxLength="14"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formRG">
+                            <Form.Label column sm="3">RG:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="rg"
+                                    value={formData.rg}
+                                    onChange={handleChange}
+                                    placeholder="Ex: 00.000.000-0"
+                                    maxLength="12"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formDateNascimento">
+                            <Form.Label column sm="3">Data de Nascimento:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="date"
+                                    name="dataNascimento"
+                                    value={formData.dataNascimento}
+                                    onChange={handleChange}
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNacionalidade">
+                            <Form.Label column sm="3">Nacionalidade:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="nacionalidade"
+                                    value={formData.nacionalidade}
+                                    onChange={handleChange}
+                                    placeholder="Ex: Brasileira"
+                                    disabled={loadingData}
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formRua">
+                            <Form.Label column sm="3">Rua:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="rua"
+                                    value={formData.rua}
+                                    onChange={handleChange}
+                                    placeholder="Nome da rua"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNumero">
+                            <Form.Label column sm="3">Número:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="numero"
+                                    value={formData.numero}
+                                    onChange={handleChange}
+                                    placeholder="Número"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formBairro">
+                            <Form.Label column sm="3">Bairro:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="bairro"
+                                    value={formData.bairro}
+                                    onChange={handleChange}
+                                    placeholder="Bairro"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCidade">
+                            <Form.Label column sm="3">Cidade:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="text"
+                                    name="cidade"
+                                    value={formData.cidade}
+                                    onChange={handleChange}
+                                    placeholder="Cidade"
+                                    disabled={loadingData}
+                                    required
+                                />
+                            </Col>
+                        </Form.Group>
+
+                        <Form.Group as={Row} className="mb-3 align-items-center">
+                            <Form.Label column sm="3">Celular:</Form.Label>
+                            <Col sm="9">
+                                <InputGroup>
+                                    <InputGroup.Text className="celular-prefix">+ 55</InputGroup.Text>
+                                    <FormControl
                                         type="text"
-                                        name="nome"
-                                        value={formData.nome}
+                                        name="celularDDD"
+                                        value={formData.celularDDD}
                                         onChange={handleChange}
-                                        placeholder="Nome completo do profissional"
+                                        placeholder="(__)"
+                                        maxLength="2"
+                                        className="ddd-input"
                                         disabled={loadingData}
                                         required
                                     />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center">
-                                <Form.Label column sm="3">Cargo:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Check
-                                        inline
-                                        type="radio"
-                                        label="Secretário/a"
-                                        name="cargo"
-                                        id="cargoSecretaria"
-                                        value="Secretário/a"
-                                        checked={formData.cargo === 'Secretário/a'}
-                                        onChange={handleChange}
-                                        disabled={loadingData}
-                                    />
-                                    <Form.Check
-                                        inline
-                                        type="radio"
-                                        label="Conselheiro/a"
-                                        name="cargo"
-                                        id="cargoConselheira"
-                                        value="Conselheiro/a"
-                                        checked={formData.cargo === 'Conselheiro/a'}
-                                        onChange={handleChange}
-                                        disabled={loadingData}
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCPF">
-                                <Form.Label column sm="3">CPF:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
+                                    <FormControl
                                         type="text"
-                                        name="cpf"
-                                        value={formData.cpf}
+                                        name="celularNumero"
+                                        value={formData.celularNumero}
                                         onChange={handleChange}
-                                        placeholder="Ex: 000.000.000-00"
-                                        maxLength="14" // Para formatar com pontos e traço
+                                        placeholder="_____-____"
+                                        maxLength="10"
+                                        className="numero-celular-input"
                                         disabled={loadingData}
                                         required
                                     />
-                                </Col>
-                            </Form.Group>
+                                </InputGroup>
+                            </Col>
+                        </Form.Group>
 
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formRG">
-                                <Form.Label column sm="3">RG:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="rg"
-                                        value={formData.rg}
-                                        onChange={handleChange}
-                                        placeholder="Ex: 00.000.000-0"
-                                        maxLength="12" // Depende do formato do RG
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formDateNascimento">
-                                <Form.Label column sm="3">Data de Nascimento:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="date"
-                                        name="dataNascimento"
-                                        value={formData.dataNascimento}
-                                        onChange={handleChange}
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNacionalidade">
-                                <Form.Label column sm="3">Nacionalidade:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="nacionalidade"
-                                        value={formData.nacionalidade}
-                                        onChange={handleChange}
-                                        placeholder="Ex: Brasileiro"
-                                        disabled={loadingData}
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formRua">
-                                <Form.Label column sm="3">Rua:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="rua"
-                                        value={formData.rua}
-                                        onChange={handleChange}
-                                        placeholder="Nome da rua"
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formNumero">
-                                <Form.Label column sm="3">Número:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="numero"
-                                        value={formData.numero}
-                                        onChange={handleChange}
-                                        placeholder="Número"
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formBairro">
-                                <Form.Label column sm="3">Bairro:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="bairro"
-                                        value={formData.bairro}
-                                        onChange={handleChange}
-                                        placeholder="Bairro"
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center" controlId="formCidade">
-                                <Form.Label column sm="3">Cidade:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="text"
-                                        name="cidade"
-                                        value={formData.cidade}
-                                        onChange={handleChange}
-                                        placeholder="Cidade"
-                                        disabled={loadingData}
-                                        required
-                                    />
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-3 align-items-center">
-                                <Form.Label column sm="3">Celular:</Form.Label>
-                                <Col sm="9">
-                                    <InputGroup>
-                                        <InputGroup.Text className="celular-prefix">+ 55</InputGroup.Text>
-                                        <FormControl
-                                            type="text"
-                                            name="celularDDD"
-                                            value={formData.celularDDD}
-                                            onChange={handleChange}
-                                            placeholder="(__)"
-                                            maxLength="2"
-                                            className="ddd-input"
-                                            disabled={loadingData}
-                                            required
-                                        />
-                                        <FormControl
-                                            type="text"
-                                            name="celularNumero"
-                                            value={formData.celularNumero}
-                                            onChange={handleChange}
-                                            placeholder="_____-____"
-                                            maxLength="10" // Ex: 99999-9999
-                                            className="numero-celular-input"
-                                            disabled={loadingData}
-                                            required
-                                        />
-                                    </InputGroup>
-                                </Col>
-                            </Form.Group>
-
-                            <Form.Group as={Row} className="mb-4 align-items-center" controlId="uploadFotoPerfil">
-                                <Form.Label column sm="3">Foto de Perfil:</Form.Label>
-                                <Col sm="9">
-                                    <Form.Control
-                                        type="file"
-                                        name="fotoPerfil"
-                                        onChange={handleChange}
-                                        className="d-none"
-                                        disabled={loadingData}
-                                    />
-                                    <Button
-                                        variant="outline-secondary"
-                                        onClick={() => document.getElementById('uploadFotoPerfil').click()}
-                                        className="anexar-imagem-button"
-                                        disabled={loadingData}
-                                    >
-                                        Anexar Imagem <i className="bi bi-paperclip ms-2"></i>
-                                    </Button>
-                                    {formData.fotoPerfil && (
-                                        <span className="ms-2 file-name-display">{formData.fotoPerfil.name}</span>
-                                    )}
-                                </Col>
-                            </Form.Group>
-
-                            <div className="d-flex justify-content-center mt-5 button-group">
-                                <Button 
-                                    variant="primary" 
-                                    type="submit" 
-                                    className="submit-button me-3"
-                                    disabled={loading || loadingData}
+                        <Form.Group as={Row} className="mb-4 align-items-center" controlId="uploadFotoPerfil">
+                            <Form.Label column sm="3">Foto de Perfil:</Form.Label>
+                            <Col sm="9">
+                                <Form.Control
+                                    type="file"
+                                    name="fotoPerfil"
+                                    onChange={handleChange}
+                                    className="d-none"
+                                    disabled={loadingData}
+                                />
+                                <Button
+                                    variant="outline-secondary"
+                                    onClick={() => document.getElementById('uploadFotoPerfil').click()}
+                                    className="anexar-imagem-button"
+                                    disabled={loadingData}
                                 >
-                                    {loading ? (
-                                        <>
-                                            <Spinner
-                                                as="span"
-                                                animation="border"
-                                                size="sm"
-                                                role="status"
-                                                aria-hidden="true"
-                                                className="me-2"
-                                            />
-                                            {isEditMode ? 'Atualizando...' : 'Cadastrando...'}
-                                        </>
-                                    ) : (
-                                        isEditMode ? 'Atualizar' : 'Cadastrar'
-                                    )}
+                                    Anexar Imagem <i className="bi bi-paperclip ms-2"></i>
                                 </Button>
-                                <Button 
-                                    variant="secondary" 
-                                    type="button" 
-                                    onClick={handleCancel} 
-                                    className="cancel-button"
-                                    disabled={loading || loadingData}
-                                >
-                                    Cancelar
-                                </Button>
+                                {formData.fotoPerfil && (
+                                    <span className="ms-2 file-name-display">{formData.fotoPerfil.name}</span>
+                                )}
+                            </Col>
+                        </Form.Group>
+
+                        <div className="d-flex justify-content-center mt-5 button-group">
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                className="submit-button me-3"
+                                disabled={loading || loadingData}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Spinner
+                                            as="span"
+                                            animation="border"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                            className="me-2"
+                                        />
+                                        {isEditMode ? 'Atualizando...' : 'Cadastrando...'}
+                                    </>
+                                ) : (
+                                    isEditMode ? 'Atualizar' : 'Cadastrar'
+                                )}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                type="button"
+                                onClick={handleCancel}
+                                className="cancel-button"
+                                disabled={loading || loadingData}
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </Form>
+                </Card.Body>
+            </Card>
+
+            {/* Modal de Credenciais de 1º Acesso Geradas Automaticamente */}
+            <Modal
+                show={Boolean(credenciaisGeradas)}
+                onHide={() => setCredenciaisGeradas(null)}
+                centered
+                backdrop="static"
+            >
+                <Modal.Header className="bg-light">
+                    <Modal.Title className="h5 fw-bold text-primary">
+                        <i className="bi bi-person-check-fill me-2 text-success"></i>
+                        Profissional e Login Criados com Sucesso!
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {credenciaisGeradas && (
+                        <div>
+                            <p className="text-muted small mb-3">
+                                Entregue as credenciais abaixo ao profissional <strong>{credenciaisGeradas.nome}</strong>.
+                                No primeiro login, o sistema exigirá automaticamente a criação de uma senha pessoal definitiva.
+                            </p>
+
+                            <div className="p-3 bg-light rounded border mb-3">
+                                <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span className="text-muted small">Usuário de Acesso (Login):</span>
+                                    <code className="fs-6 fw-bold text-primary">{credenciaisGeradas.username}</code>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span className="text-muted small">Matrícula Institucional:</span>
+                                    <span className="fw-semibold text-dark">{credenciaisGeradas.matricula}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span className="text-muted small">Senha Temporária (1º Acesso):</span>
+                                    <code className="fs-6 fw-bold text-danger">{credenciaisGeradas.senhaTemporaria}</code>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Política Zero-Trust:</span>
+                                    <Badge bg="warning" text="dark">Troca obrigatória no 1º login</Badge>
+                                </div>
                             </div>
-                        </Form>
-                    </Card.Body>
-                </Card>
-            </Container>
+
+                            <Button
+                                variant={copiado ? 'success' : 'outline-primary'}
+                                className="w-100"
+                                onClick={handleCopiarCredenciais}
+                            >
+                                <i className={`bi ${copiado ? 'bi-check2-all' : 'bi-clipboard'} me-2`}></i>
+                                {copiado ? 'Credenciais Copiadas para a Área de Transferência!' : 'Copiar Credenciais de Acesso'}
+                            </Button>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        variant="outline-secondary"
+                        onClick={() => setCredenciaisGeradas(null)}
+                    >
+                        Cadastrar Outro
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={() => navigate('/home/gerenciar-profissionais')}
+                    >
+                        Ir para Gerenciar Profissionais
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </Container>
     );
 }
 
