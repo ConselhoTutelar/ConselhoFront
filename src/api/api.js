@@ -1,6 +1,16 @@
 // src/api/api.js
-const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-export const API_URL = rawApiUrl.replace(/\/+$/, "");
+function normalizeApiBaseUrl(rawUrl) {
+  const trimmed = String(rawUrl || "http://localhost:3000").trim().replace(/\/+$/, "");
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("localhost") || trimmed.startsWith("127.0.0.1")) {
+    return `http://${trimmed}`;
+  }
+  return `https://${trimmed}`;
+}
+
+export const API_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 /**
  * Recupera o token JWT armazenado no cliente
