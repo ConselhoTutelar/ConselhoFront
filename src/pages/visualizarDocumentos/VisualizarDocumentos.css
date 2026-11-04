@@ -2,25 +2,25 @@
 @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
 
 .visualizar-documentos-background {
-    background-color: #f0f2f5; /* Fundo suave, consistente com outras páginas */
+    background-color: #f0f2f5;
     min-height: 100vh;
-    padding: 3rem 0; /* Espaçamento superior e inferior */
+    padding: 3rem 0;
 }
 
 .visualizar-documentos-container {
-    max-width: 1200px; /* Largura máxima para a tabela */
+    max-width: 1320px;
 }
 
 .visualizar-documentos-card {
-    border-radius: 15px; /* Bordas arredondadas */
+    border-radius: 15px;
     background-color: #ffffff;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .visualizar-documentos-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: #3159A3; /* Azul forte, consistente com outros títulos */
+    color: #3159A3;
     margin-bottom: 0;
 }
 
@@ -29,61 +29,287 @@
 }
 
 .visualizar-documentos-header {
-    background-color: #F8F9FA; /* Azul primário */
+    background-color: #F8F9FA;
     color: #3159A3;
-    padding: 1rem 1.5rem;
-    border-radius: 15px 15px 0 0; /* Bordas arredondadas apenas no topo */
-    border-bottom: 1px solid #e0e0e0; /* Borda inferior sutil */
+    padding: 1.25rem 1.5rem;
+    border-radius: 15px 15px 0 0;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-/* Estilo para a barra de pesquisa */
+/* Barra de Modelos Rápidos de Relatório */
+.modelos-relatorio-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px dashed #cbd5e1;
+}
+
+.modelos-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #3159A3;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.preset-btn {
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Container Principal de Pesquisa e Filtros */
 .search-filter-container {
     background-color: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 10px;
+    padding: 1.35rem;
+    border-radius: 12px;
     margin-bottom: 1.5rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.35rem;
 }
 
 .search-input-group .form-control {
-    border-radius: 25px; /* Campo de busca bem arredondado */
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    border: 1px solid #e0e0e0;
+    border-radius: 0 10px 10px 0;
+    padding: 0.55rem 1rem;
+    font-size: 0.92rem;
+    border: 1px solid #cbd5e1;
     box-shadow: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .search-input-group .form-control:focus {
     border-color: #3159A3;
-    box-shadow: 0 0 0 0.25rem rgba(49, 89, 163, 0.15);
+    box-shadow: 0 0 0 0.2rem rgba(49, 89, 163, 0.15);
 }
 
 .search-input-group .input-group-text {
-    background-color: transparent;
-    border: none;
-    border-radius: 25px 0 0 25px;
-    padding: 0.8rem 1rem;
-    color: #6c757d;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    padding: 0.55rem 0.85rem;
+    color: #64748b;
 }
 
 .filter-select {
-    border-radius: 25px;
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 0.92rem;
+    border: 1px solid #cbd5e1;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.filter-select:focus {
+.filter-select:focus,
+.filter-select-sm:focus {
     border-color: #3159A3;
-    box-shadow: 0 0 0 0.25rem rgba(49, 89, 163, 0.15);
+    box-shadow: 0 0 0 0.2rem rgba(49, 89, 163, 0.15);
     outline: none;
+}
+
+.filter-select-sm {
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.85rem;
+    padding: 0.42rem 0.75rem;
+}
+
+.filter-toggle-btn {
+    border-radius: 10px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Chips Multi-seleção de Tipos de Documento */
+.tipo-chips-wrapper {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tipo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.32rem 0.8rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.tipo-chip:hover {
+    border-color: #3159A3;
+    background-color: #f1f5f9;
+}
+
+.tipo-chip.active {
+    background-color: #3159A3;
+    border-color: #3159A3;
+    color: #ffffff;
+}
+
+.tipo-chip.chip-danger.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.tipo-chip.chip-primary.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.tipo-chip.chip-warning.active {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+    color: #ffffff;
+}
+
+.tipo-chip.chip-info.active {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #0f172a;
+}
+
+.tipo-chip.chip-success.active {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.chip-count {
+    background-color: rgba(0, 0, 0, 0.08);
+    padding: 0.05rem 0.42rem;
+    border-radius: 10px;
+    font-size: 0.72rem;
+}
+
+.tipo-chip.active .chip-count {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Tags de Filtros Ativos */
+.filtro-ativo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background-color: #e0e7ff;
+    color: #1e3a8a;
+    border: 1px solid #c7d2fe;
+    border-radius: 16px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.78rem;
+}
+
+.btn-remove-tag {
+    background: none;
+    border: none;
+    color: #1e3a8a;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0 0.15rem;
+    cursor: pointer;
+}
+
+.btn-remove-tag:hover {
+    color: #dc2626;
+}
+
+/* Cards de Indicadores (KPIs do Recorte) */
+.kpi-filter-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid #e2e8f0;
+    border-left-width: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
+}
+
+.kpi-blue {
+    border-left-color: #3159A3;
+}
+
+.kpi-red {
+    border-left-color: #dc3545;
+}
+
+.kpi-green {
+    border-left-color: #198754;
+}
+
+.kpi-purple {
+    border-left-color: #0d6efd;
+}
+
+.kpi-label {
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.3px;
+}
+
+.kpi-value {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0.15rem 0;
+}
+
+.kpi-sub {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+/* Pill de Seleção em Lote */
+.selecao-lote-pill {
+    display: inline-flex;
+    align-items: center;
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 0.25rem 0.85rem;
+    font-size: 0.82rem;
+}
+
+.btn-limpar-selecao {
+    background: none;
+    border: none;
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 /* Estilo da tabela */
 .documentos-table {
     margin-bottom: 0;
+    font-size: 0.9rem;
 }
 
 .documentos-table thead th {
@@ -91,11 +317,12 @@
     color: #495057;
     font-weight: 600;
     border-bottom: 2px solid #dee2e6;
-    padding: 1rem;
+    padding: 0.85rem 0.75rem;
+    white-space: nowrap;
 }
 
 .documentos-table tbody td {
-    padding: 1rem;
+    padding: 0.75rem;
     vertical-align: middle;
 }
 
@@ -107,7 +334,7 @@
 .btn-refresh {
     border-radius: 8px;
     font-weight: 500;
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
     transition: all 0.2s ease;
 }
 
@@ -116,10 +343,26 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.btn-relatorio-principal {
+    background-color: #3159A3;
+    border-color: #3159A3;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1.15rem;
+    transition: all 0.2s ease;
+}
+
+.btn-relatorio-principal:hover {
+    background-color: #254682;
+    border-color: #254682;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(49, 89, 163, 0.25);
+}
+
 .btn-pdf {
     border-radius: 8px;
     font-weight: 500;
-    padding: 0.5rem 1rem;
+    padding: 0.35rem 0.75rem;
     transition: all 0.2s ease;
 }
 
@@ -131,7 +374,7 @@
 /* Badges de resumo */
 .resumo-badges {
     background-color: #f8f9fa;
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 10px;
     border: 1px solid #e0e0e0;
 }
@@ -139,40 +382,46 @@
 .resumo-badges h5 {
     color: #495057;
     font-weight: 600;
-    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.resumo-badge-clickable {
+    cursor: pointer;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.resumo-badge-clickable:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+/* Pré-visualização do Relatório no Modal */
+.preview-relatorio-box {
+    background-color: #f1f5f9;
+}
+
+.preview-paper {
+    min-height: 320px;
 }
 
 /* Responsividade */
 @media (max-width: 767.98px) {
     .visualizar-documentos-title {
-        font-size: 1.8rem;
+        font-size: 1.45rem;
     }
-    
+
     .search-filter-container {
         padding: 1rem;
     }
-    
-    .documentos-table {
-        font-size: 0.9rem;
-    }
-    
-    .documentos-table thead th,
-    .documentos-table tbody td {
-        padding: 0.75rem 0.5rem;
-    }
-}
 
-@media (max-width: 575.98px) {
-    .visualizar-documentos-title {
-        font-size: 1.5rem;
-    }
-    
-    .search-filter-container {
-        padding: 0.75rem;
-    }
-    
     .documentos-table {
         font-size: 0.85rem;
     }
-}
 
+    .documentos-table thead th,
+    .documentos-table tbody td {
+        padding: 0.6rem 0.45rem;
+    }
+}

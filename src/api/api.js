@@ -1,5 +1,6 @@
 // src/api/api.js
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export const API_URL = rawApiUrl.replace(/\/+$/, "");
 
 /**
  * Recupera o token JWT armazenado no cliente
@@ -74,7 +75,7 @@ export async function apiRequest(endpoint, options = {}) {
     return responseData;
   } catch (err) {
     if (err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-      throw new Error('Não foi possível conectar ao servidor backend (porta 3000). Verifique se o backend está em execução.');
+      throw new Error(`Não foi possível conectar ao servidor backend (${API_URL}). Verifique se o backend está em execução.`);
     }
     throw err;
   }
