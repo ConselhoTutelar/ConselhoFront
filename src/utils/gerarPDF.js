@@ -1,11 +1,12 @@
 import jsPDF from 'jspdf';
 
 // Informações do cabeçalho padrão
-const CABECALHO = {
-  titulo: 'Conselho Tutelar - Panambi',
+const cabecalho = {
+  titulo: 'CONSELHO TUTELAR - PANAMBI',
   endereco: 'Rua: Antônio Schutz, 188, Bairro: Piratini, Panambi/RS.',
   contato: 'Fone (55) 3376 9123/84195737 Email: conselhotutelar@panambi.rs.gov.br'
 };
+const CABECALHO = cabecalho;
 
 // Função auxiliar para formatar data
 const formatarData = (data) => {
@@ -63,15 +64,127 @@ export const formatarObservacoes = (observacao) => {
   }
 };
 
-// Função auxiliar para adicionar texto com quebra de linha automática
-const adicionarTexto = (doc, texto, x, y, maxWidth, lineHeight = 7) => {
+// Função auxiliar para quebrar texto mantendo recuo na primeira linha se necessário
+const splitComPrimeiraLinha = (doc, texto, larguraPrimeira, larguraDemais) => {
+  const paragrafos = String(texto || '').split('\n');
+  const resultado = [];
+
+  for (let p = 0; p < paragrafos.length; p++) {
+    const paragrafo = paragrafos[p].trim();
+    if (!paragrafo) {
+      if (resultado.length > 0) resultado.push('');
+      continue;
+    }
+
+    const palavras = paragrafo.split(/\s+/);
+    let linhaAtual = '';
+
+    for (let i = 0; i < palavras.length; i++) {
+      const palavra = palavras[i];
+      const maxL = resultado.length === 0 ? larguraPrimeira : larguraDemais;
+      const tentativa = linhaAtual ? linhaAtual + ' ' + palavra : palavra;
+
+      if (doc.getTextWidth(tentativa) <= maxL) {
+        linhaAtual = tentativa;
+      } else {
+        if (linhaAtual) {
+          resultado.push(linhaAtual);
+          const maxProx = resultado.length === 0 ? larguraPrimeira : larguraDemais;
+          if (doc.getTextWidth(palavra) <= maxProx) {
+            linhaAtual = palavra;
+          } else {
+            const pedacos = doc.splitTextToSize(palavra, maxProx);
+            for (let k = 0; k < pedacos.length - 1; k++) {
+              resultado.push(pedacos[k]);
+            }
+            linhaAtual = pedacos[pedacos.length - 1];
+          }
+        } else {
+          const pedacos = doc.splitTextToSize(palavra, maxL);
+          for (let k = 0; k < pedacos.length - 1; k++) {
+            resultado.push(pedacos[k]);
+          }
+          linhaAtual = pedacos[pedacos.length - 1];
+        }
+      }
+    }
+    if (linhaAtual) {
+      resultado.push(linhaAtual);
+    }
+  }
+
+  return resultado.length > 0 ? resultado : [''];
+};
+
+// Função auxiliar para adicionar campo com apenas o título da informação em negrito e valor em normal (tamanho 12)
+const adicionarCampo = (doc, rotulo, valor, x, y, maxWidth = 170, lineHeight = 6) => {
+  doc.setFontSize(12);
+
+  const rotuloLimpo = String(rotulo || '').trim();
+  const rotuloComDoisPontos = rotuloLimpo.endsWith(':') ? rotuloLimpo : rotuloLimpo + ':';
+  const rotuloComEspaco = rotuloComDoisPontos + ' ';
+
+  doc.setFont('times', 'bold');
+  const wRotulo = doc.getTextWidth(rotuloComEspaco);
+
+  if (y > 270) {
+    doc.addPage();
+    y = 20;
+  }
+
+  // Se não houver valor, apenas imprime o título/legenda da informação em negrito
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    doc.setFont('times', 'bold');
+    doc.text(rotuloComDoisPontos, x, y);
+    doc.setFont('times', 'normal');
+    return y + lineHeight;
+  }
+
+  const valorStr = String(valor);
+  doc.setFont('times', 'normal');
+
+  const espacoPrimeiraLinha = maxWidth - wRotulo;
+  const linhas = splitComPrimeiraLinha(doc, valorStr, espacoPrimeiraLinha, maxWidth);
+
+  // Título da informação em negrito
+  doc.setFont('times', 'bold');
+  doc.text(rotuloComEspaco, x, y);
+
+  // Informação em fonte normal
+  doc.setFont('times', 'normal');
+  if (linhas.length > 0) {
+    doc.text(linhas[0], x + wRotulo, y);
+    for (let i = 1; i < linhas.length; i++) {
+      y += lineHeight;
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(linhas[i], x, y);
+    }
+  }
+
+  return y + lineHeight;
+};
+
+// Função auxiliar para adicionar texto normal com quebra de linha automática (tamanho 12)
+const adicionarTexto = (doc, texto, x, y, maxWidth = 170, lineHeight = 6) => {
+  doc.setFont('times', 'normal');
+  doc.setFontSize(12);
   const lines = doc.splitTextToSize(String(texto || 'N/A'), maxWidth);
-  doc.text(lines, x, y);
-  return y + (lines.length * lineHeight);
+  for (let i = 0; i < lines.length; i++) {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.text(lines[i], x, y);
+    y += lineHeight;
+  }
+  return y;
 };
 
 // Função auxiliar para adicionar assinatura no PDF
-const adicionarAssinatura = (doc, documento, y = 270) => {
+const adicionarAssinatura = (doc, documento, y = 250) => {
   let assinatura = documento.assinatura || null;
   
   if (!assinatura && documento.Observacao) {
@@ -85,29 +198,41 @@ const adicionarAssinatura = (doc, documento, y = 270) => {
     }
   }
   
+  if (y > 255) {
+    doc.addPage();
+    y = 30;
+  }
+
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+
   if (assinatura) {
     if (assinatura.tipo === 'certificado' && assinatura.certificado) {
       y = adicionarSeloAssinaturaDigital(doc, y, assinatura);
     } else if (assinatura.tipo === 'digital' && assinatura.nome) {
-      doc.setFontSize(9);
-      doc.text(`Ass. Digital: ${assinatura.nome}`, 20, y);
+      doc.setFont('times', 'bold');
+      doc.text('Ass. Digital: ', 20, y);
+      const w = doc.getTextWidth('Ass. Digital: ');
+      doc.setFont('times', 'normal');
+      doc.text(String(assinatura.nome), 20 + w, y);
     } else if (assinatura.tipo === 'fisica' && assinatura.imagem) {
-      doc.setFontSize(9);
+      doc.setFont('times', 'bold');
       doc.text('Assinatura Física:', 20, y);
-      y += 5;
+      y += 6;
       try {
         doc.addImage(assinatura.imagem, 'PNG', 20, y, 60, 20);
         y += 25;
       } catch (e) {
+        doc.setFont('times', 'normal');
         doc.text('(Imagem de assinatura)', 20, y);
-        y += 5;
+        y += 6;
       }
     } else {
-      doc.setFontSize(9);
+      doc.setFont('times', 'normal');
       doc.text('Ass. Digital Conselheiro (a) Tutelar', 20, y);
     }
   } else {
-    doc.setFontSize(9);
+    doc.setFont('times', 'normal');
     doc.text('Ass. Digital Conselheiro (a) Tutelar', 20, y);
   }
   
@@ -148,6 +273,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
     minute: '2-digit'
   });
   
+  
   doc.text(`Documento assinado digitalmente em ${dataHora}`, x + 20, y + 20);
   doc.text('Certificado Digital ICP-Brasil - Autenticidade garantida', x + 20, y + 27);
   
@@ -166,70 +292,80 @@ export const gerarPDFDenuncia = (denuncia) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('times new roman', 'bold');
-  doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
-  doc.setFontSize(12);
-  doc.setFont('times new roman', 'bold');
-  doc.text('DADOS DA DENÚNCIA', 20, y);
-  y += 10;
+  // Título do documento abaixo do cabeçalho
+  doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
+  y += 12;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  
-  y = adicionarTexto(doc, `Número da Denúncia: ${denuncia.nrDenuncia || denuncia.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(denuncia.Data || denuncia.data)}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Tipo de Denúncia: ${denuncia.TipoDenuncia || denuncia.tipoDenuncia || 'N/A'}`, 20, y, 170);
-  y += 5;
+  // Informações da Denúncia
+  y = adicionarCampo(doc, 'Número da Denúncia:', denuncia.nrDenuncia || denuncia.id || 'N/A', 20, y, 170);
+  y = adicionarCampo(doc, 'Data:', formatarData(denuncia.Data || denuncia.data), 20, y, 170);
+  y = adicionarCampo(doc, 'Tipo de Denúncia:', denuncia.TipoDenuncia || denuncia.tipoDenuncia || 'N/A', 20, y, 170);
+
   if (denuncia.nomeConselheiro || denuncia.conselheiro) {
-    y = adicionarTexto(doc, `Conselheiro Responsável: ${denuncia.nomeConselheiro || denuncia.conselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Conselheiro Responsável:', denuncia.nomeConselheiro || denuncia.conselheiro, 20, y, 170);
   }
   if (denuncia.direitoVioladoDescricao || denuncia.direitoViolado) {
-    y = adicionarTexto(doc, `Direito Violado: ${denuncia.direitoVioladoDescricao || denuncia.direitoViolado}`, 20, y, 170);
-    y += 5;
-  }
-  y = adicionarTexto(doc, `Descrição dos Fatos:`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, denuncia.DescricaoFato || denuncia.descricao || 'N/A', 20, y, 170);
-  y += 5;
-  
-  if (denuncia.Observacao) {
-    const observacoesFormatadas = formatarObservacoes(denuncia.Observacao);
-    if (observacoesFormatadas) {
-      y = adicionarTexto(doc, `Observações:`, 20, y, 170);
-      y += 5;
-      y = adicionarTexto(doc, observacoesFormatadas, 20, y, 170);
-      y += 5;
-    }
-  } else if (denuncia.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${denuncia.endereco}`, 20, y, 170);
-    y += 5;
-  }
-  
-  if (denuncia.Data_averiguacao) {
-    y = adicionarTexto(doc, `Data de Averiguação: ${formatarData(denuncia.Data_averiguacao)}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Direito Violado:', denuncia.direitoVioladoDescricao || denuncia.direitoViolado, 20, y, 170);
   }
 
-  adicionarAssinatura(doc, denuncia);
+  y = adicionarCampo(doc, 'Descrição dos Fatos:', null, 20, y, 170);
+  y = adicionarTexto(doc, denuncia.DescricaoFato || denuncia.descricao || 'N/A', 20, y, 170);
+  y += 4;
+
+  if (denuncia.Observacao) {
+    y = adicionarCampo(doc, 'Observações:', null, 20, y, 170);
+    let obsData = null;
+    try {
+      obsData = typeof denuncia.Observacao === 'object' ? denuncia.Observacao : JSON.parse(denuncia.Observacao);
+    } catch (e) {}
+
+    if (obsData && typeof obsData === 'object') {
+      if (obsData.identificacao && obsData.identificacao !== 'N/A') {
+        y = adicionarCampo(doc, 'Identificação:', obsData.identificacao, 20, y, 170);
+      }
+      if (obsData.criancasAdolescentes && obsData.criancasAdolescentes !== 'N/A') {
+        y = adicionarCampo(doc, 'Crianças/Adolescentes:', obsData.criancasAdolescentes, 20, y, 170);
+      }
+      if (obsData.paisResponsaveis && obsData.paisResponsaveis !== 'N/A') {
+        y = adicionarCampo(doc, 'Pais/Responsáveis:', obsData.paisResponsaveis, 20, y, 170);
+      }
+      if (obsData.endereco && obsData.endereco !== '-' && obsData.endereco !== 'N/A') {
+        y = adicionarCampo(doc, 'Endereço:', obsData.endereco, 20, y, 170);
+      }
+      if (obsData.conselheiroAveriguador && obsData.conselheiroAveriguador !== 'N/A') {
+        y = adicionarCampo(doc, 'Conselheiro Averiguador:', obsData.conselheiroAveriguador, 20, y, 170);
+      }
+    } else {
+      y = adicionarTexto(doc, String(denuncia.Observacao), 20, y, 170);
+    }
+    y += 4;
+  } else if (denuncia.endereco) {
+    y = adicionarCampo(doc, 'Endereço:', denuncia.endereco, 20, y, 170);
+  }
+
+  if (denuncia.Data_averiguacao) {
+    y = adicionarCampo(doc, 'Data de Averiguação:', formatarData(denuncia.Data_averiguacao), 20, y, 170);
+  }
+
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, denuncia, yAssinatura);
   doc.save(`Denuncia_${denuncia.nrDenuncia || denuncia.id || 'N/A'}.pdf`);
 };
 
@@ -238,57 +374,47 @@ export const gerarPDFAtendimento = (atendimento) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('times new roman', 'bold');
-  doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
-  doc.setFontSize(12);
-  doc.setFont('times new roman', 'bold');
-  doc.text('DADOS DO ATENDIMENTO', 20, y);
-  y += 10;
+  // Título do documento abaixo do cabeçalho
+  doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
+  y += 12;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Atendimento: ${atendimento.idAtendimento || atendimento.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(atendimento.Data || atendimento.data)}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Hora: ${formatarHora(atendimento.Hora || atendimento.hora)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Atendimento
+  y = adicionarCampo(doc, 'ID do Atendimento:', atendimento.idAtendimento || atendimento.id || 'N/A', 20, y, 170);
+  y = adicionarCampo(doc, 'Data:', formatarData(atendimento.Data || atendimento.data), 20, y, 170);
+  y = adicionarCampo(doc, 'Hora:', formatarHora(atendimento.Hora || atendimento.hora), 20, y, 170);
+
   if (atendimento.direitoVioladoDescricao || atendimento.direitoViolado) {
-    y = adicionarTexto(doc, `Direito Violado: ${atendimento.direitoVioladoDescricao || atendimento.direitoViolado}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Direito Violado:', atendimento.direitoVioladoDescricao || atendimento.direitoViolado, 20, y, 170);
   }
   if (atendimento.profissional || atendimento.nomeConselheiro) {
-    y = adicionarTexto(doc, `Profissional / Conselheiro: ${atendimento.profissional || atendimento.nomeConselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Profissional / Conselheiro:', atendimento.profissional || atendimento.nomeConselheiro, 20, y, 170);
   }
   if (atendimento.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${atendimento.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', atendimento.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Relato:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Relato:', null, 20, y, 170);
   y = adicionarTexto(doc, atendimento.Relato || atendimento.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, atendimento);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, atendimento, yAssinatura);
   doc.save(`Atendimento_${atendimento.idAtendimento || atendimento.id || 'N/A'}.pdf`);
 };
 
@@ -297,57 +423,48 @@ export const gerarPDFNotificacao = (notificacao) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('times new roman', 'bold');
-  doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
-  doc.setFontSize(12);
-  doc.setFont('times new roman', 'bold');
-  doc.text('DADOS DA NOTIFICAÇÃO', 20, y);
-  y += 10;
+  // Título do documento abaixo do cabeçalho
+  doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
+  y += 12;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  
-  y = adicionarTexto(doc, `ID da Notificação: ${notificacao.id || 'N/A'}`, 20, y, 170);
-  y += 5;
+  // Informações da Notificação
+  y = adicionarCampo(doc, 'ID da Notificação:', notificacao.id || 'N/A', 20, y, 170);
   if (notificacao.data || notificacao.Data) {
-    y = adicionarTexto(doc, `Data: ${formatarData(notificacao.data || notificacao.Data)}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Data:', formatarData(notificacao.data || notificacao.Data), 20, y, 170);
   }
   if (notificacao.redator || notificacao.recebedor) {
-    y = adicionarTexto(doc, `Nome de quem recebeu: ${notificacao.redator || notificacao.recebedor}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Nome de quem recebeu:', notificacao.redator || notificacao.recebedor, 20, y, 170);
   }
   if (notificacao.nomeConselheiro) {
-    y = adicionarTexto(doc, `Conselheiro Responsável: ${notificacao.nomeConselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Conselheiro Responsável:', notificacao.nomeConselheiro, 20, y, 170);
   }
   if (notificacao.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${notificacao.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', notificacao.endereco, 20, y, 170);
   }
   if (notificacao.descricao || (typeof notificacao.assinatura === 'string' && notificacao.assinatura)) {
-    y = adicionarTexto(doc, `Segunda via da Convocação / Descrição:`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Segunda via da Convocação / Descrição:', null, 20, y, 170);
     y = adicionarTexto(doc, notificacao.descricao || notificacao.assinatura, 20, y, 170);
   }
 
-  adicionarAssinatura(doc, notificacao);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, notificacao, yAssinatura);
   doc.save(`Notificacao_${notificacao.id || 'N/A'}.pdf`);
 };
 
@@ -356,58 +473,46 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('times new roman', 'bold');
-  doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
-  y += 5;
   doc.setFontSize(12);
-  doc.text('(Criança/Adolescente)', 105, y, { align: 'center' });
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
-  doc.setFontSize(12);
-  doc.setFont('times new roman', 'bold');
-  doc.text('DADOS DO TERMO', 20, y);
-  y += 10;
+  // Título do documento abaixo do cabeçalho
+  doc.text('TERMO DE MEDIDAS APLICADAS (Criança/Adolescente)', 105, y, { align: 'center' });
+  y += 12;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(termo.data || termo.Data)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Termo
+  y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
+  y = adicionarCampo(doc, 'Data:', formatarData(termo.data || termo.Data), 20, y, 170);
+
   if (termo.nomeMenor) {
-    y = adicionarTexto(doc, `Criança/Adolescente: ${termo.nomeMenor}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Criança/Adolescente:', termo.nomeMenor, 20, y, 170);
   }
   if (termo.inciso) {
-    y = adicionarTexto(doc, `Inciso (Art. 101 ECA): Inciso ${termo.inciso}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Inciso (Art. 101 ECA):', `Inciso ${termo.inciso}`, 20, y, 170);
   }
   if (termo.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${termo.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Descrição:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Descrição:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, termo);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, termo, yAssinatura);
   doc.save(`TermoMedidasMenor_${termo.idmedida_aplicada || termo.id || 'N/A'}.pdf`);
 };
 
@@ -416,62 +521,49 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('times new roman', 'bold');
-  doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
-  y += 5;
   doc.setFontSize(12);
-  doc.text('(Responsável)', 105, y, { align: 'center' });
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
-  doc.setFontSize(12);
-  doc.setFont('times new roman', 'bold');
-  doc.text('DADOS DO TERMO', 20, y);
-  y += 10;
+  // Título do documento abaixo do cabeçalho
+  doc.text('TERMO DE APLICAÇÃO DE MEDIDAS AOS PAIS OU RESPONSÁVEL', 105, y, { align: 'center' });
+  y += 12;
 
-  doc.setFontSize(10);
-  doc.setFont('times new roman', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(termo.data || termo.Data)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Termo
+  y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
+  y = adicionarCampo(doc, 'Data:', formatarData(termo.data || termo.Data), 20, y, 170);
+
   if (termo.nomeResponsavel) {
-    y = adicionarTexto(doc, `Responsável: ${termo.nomeResponsavel}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Responsável:', termo.nomeResponsavel, 20, y, 170);
   }
   if (termo.inciso) {
-    y = adicionarTexto(doc, `Inciso (Art. 129 ECA): Inciso ${termo.inciso}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Inciso (Art. 129 ECA):', `Inciso ${termo.inciso}`, 20, y, 170);
   }
   if (termo.Encaminhamento) {
-    y = adicionarTexto(doc, `Encaminhamento: ${termo.Encaminhamento}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Encaminhamento:', termo.Encaminhamento, 20, y, 170);
   }
   if (termo.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${termo.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Descrição:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Descrição:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, termo);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, termo, yAssinatura);
   doc.save(`TermoMedidasResponsavel_${termo.idmedida_aplicada || termo.id || 'N/A'}.pdf`);
 };
 
@@ -592,12 +684,12 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   doc.setTextColor(255, 255, 255);
   doc.setFont('times new roman', 'bold');
   doc.setFontSize(13);
-  doc.text(CABECALHO.titulo.toUpperCase(), larguraPagina / 2, y + 7, { align: 'center' });
+  doc.text(cabecalho.titulo.toUpperCase(), larguraPagina / 2, y + 7, { align: 'center' });
 
   doc.setFont('times new roman', 'normal');
   doc.setFontSize(8.5);
-  doc.text(CABECALHO.endereco, larguraPagina / 2, y + 13, { align: 'center' });
-  doc.text(CABECALHO.contato, larguraPagina / 2, y + 18, { align: 'center' });
+  doc.text(cabecalho.endereco, larguraPagina / 2, y + 13, { align: 'center' });
+  doc.text(cabecalho.contato, larguraPagina / 2, y + 18, { align: 'center' });
   y += 30;
 
   // Título Personalizado do Relatório
