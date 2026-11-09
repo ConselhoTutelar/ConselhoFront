@@ -310,8 +310,12 @@ export const gerarPDFDenuncia = (denuncia) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
   doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
   y += 12;
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
 
   // Informações da Denúncia
   y = adicionarCampo(doc, 'Número da Denúncia:', denuncia.nrDenuncia || denuncia.id || 'N/A', 20, y, 170);
@@ -392,8 +396,12 @@ export const gerarPDFAtendimento = (atendimento) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
   doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
   y += 12;
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
 
   // Informações do Atendimento
   y = adicionarCampo(doc, 'ID do Atendimento:', atendimento.idAtendimento || atendimento.id || 'N/A', 20, y, 170);
@@ -441,8 +449,12 @@ export const gerarPDFNotificacao = (notificacao) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
   doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
   y += 12;
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
 
   // Informações da Notificação
   y = adicionarCampo(doc, 'ID da Notificação:', notificacao.id || 'N/A', 20, y, 170);
@@ -491,8 +503,12 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
   doc.text('TERMO DE MEDIDAS APLICADAS (Criança/Adolescente)', 105, y, { align: 'center' });
   y += 12;
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
 
   // Informações do Termo
   y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
@@ -539,8 +555,12 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
   doc.text('TERMO DE APLICAÇÃO DE MEDIDAS AOS PAIS OU RESPONSÁVEL', 105, y, { align: 'center' });
   y += 12;
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
 
   // Informações do Termo
   y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
