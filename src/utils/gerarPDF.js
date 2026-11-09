@@ -3,8 +3,8 @@ import jsPDF from 'jspdf';
 // Informações do cabeçalho padrão
 const CABECALHO = {
   titulo: 'Conselho Tutelar - Panambi',
-  endereco: 'Rua: Hermann Mayer, 43, Térreo, Centro, Panambi/RS.',
-  contato: 'Fone (55) 3375 6592/84195737 Email: conselhotutelar@panambi.rs.gov.br'
+  endereco: 'Rua: Antônio Schutz, 188, Bairro: Piratini, Panambi/RS.',
+  contato: 'Fone (55) 3376 9123/84195737 Email: conselhotutelar@panambi.rs.gov.br'
 };
 
 // Função auxiliar para formatar data
@@ -129,7 +129,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
   doc.line(x + 5, y + 12, x + largura - 5, y + 12);
   
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setTextColor(0, 102, 204);
   doc.text('ASSINATURA DIGITAL ICP-BRASIL', x + largura / 2, y + 8, { align: 'center' });
   
@@ -137,7 +137,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
   doc.text('[ICP]', x + 8, y + 20);
   
   doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.setTextColor(0, 0, 0);
   
   const dataHora = new Date().toLocaleString('pt-BR', {
@@ -167,12 +167,12 @@ export const gerarPDFDenuncia = (denuncia) => {
   let y = 20;
 
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
   y += 5;
   doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
@@ -185,12 +185,12 @@ export const gerarPDFDenuncia = (denuncia) => {
   y += 10;
 
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('DADOS DA DENÚNCIA', 20, y);
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   
   y = adicionarTexto(doc, `Número da Denúncia: ${denuncia.nrDenuncia || denuncia.id || 'N/A'}`, 20, y, 170);
   y += 5;
@@ -239,12 +239,12 @@ export const gerarPDFAtendimento = (atendimento) => {
   let y = 20;
 
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
   y += 5;
   doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
@@ -257,12 +257,12 @@ export const gerarPDFAtendimento = (atendimento) => {
   y += 10;
 
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('DADOS DO ATENDIMENTO', 20, y);
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   
   y = adicionarTexto(doc, `ID do Atendimento: ${atendimento.idAtendimento || atendimento.id || 'N/A'}`, 20, y, 170);
   y += 5;
@@ -298,12 +298,12 @@ export const gerarPDFNotificacao = (notificacao) => {
   let y = 20;
 
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
   y += 5;
   doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
@@ -316,12 +316,12 @@ export const gerarPDFNotificacao = (notificacao) => {
   y += 10;
 
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('DADOS DA NOTIFICAÇÃO', 20, y);
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   
   y = adicionarTexto(doc, `ID da Notificação: ${notificacao.id || 'N/A'}`, 20, y, 170);
   y += 5;
@@ -357,7 +357,7 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   let y = 20;
 
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
   y += 5;
   doc.setFontSize(12);
@@ -365,7 +365,7 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
   y += 5;
   doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
@@ -378,12 +378,12 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   y += 10;
 
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('DADOS DO TERMO', 20, y);
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   
   y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
   y += 5;
@@ -417,7 +417,7 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   let y = 20;
 
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
   y += 5;
   doc.setFontSize(12);
@@ -425,7 +425,7 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
   y += 5;
   doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
@@ -438,12 +438,12 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   y += 10;
 
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('DADOS DO TERMO', 20, y);
   y += 10;
 
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   
   y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
   y += 5;
@@ -590,11 +590,11 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   doc.roundedRect(margemEsq, y, larguraUtil, 24, 2, 2, 'F');
 
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setFontSize(13);
   doc.text(CABECALHO.titulo.toUpperCase(), larguraPagina / 2, y + 7, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.setFontSize(8.5);
   doc.text(CABECALHO.endereco, larguraPagina / 2, y + 13, { align: 'center' });
   doc.text(CABECALHO.contato, larguraPagina / 2, y + 18, { align: 'center' });
@@ -602,14 +602,14 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
 
   // Título Personalizado do Relatório
   doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setFontSize(13);
   const linhasTitulo = doc.splitTextToSize(tituloRelatorio.toUpperCase(), larguraUtil);
   doc.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
   y += linhasTitulo.length * 6;
 
   if (subtituloRelatorio) {
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(9.5);
     doc.setTextColor(100, 116, 139);
     doc.text(subtituloRelatorio, larguraPagina / 2, y, { align: 'center' });
@@ -624,25 +624,25 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   doc.setFontSize(8.5);
   doc.setTextColor(51, 65, 85);
   const dataGeracao = new Date().toLocaleString('pt-BR');
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Emitido em:', margemEsq + 3, y + 5.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(dataGeracao, margemEsq + 23, y + 5.5);
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Responsável:', margemEsq + 70, y + 5.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(String(conselheiroEmissor || 'Conselheiro(a) Tutelar').substring(0, 42), margemEsq + 92, y + 5.5);
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Total no Relatório:', margemEsq + 3, y + 10.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(`${documentos.length} documento(s) selecionado(s)`, margemEsq + 33, y + 10.5);
 
   if (destinatario) {
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.text('Destinatário / Finalidade:', margemEsq + 3, y + 15.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.text(String(destinatario).substring(0, 80), margemEsq + 42, y + 15.5);
     y += 23;
   } else {
@@ -652,7 +652,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 2. Filtros e Critérios Aplicados
   if (incluirFiltros && resumoFiltrosAtivos && resumoFiltrosAtivos.length > 0) {
     verificarQuebraPagina(24);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(9.5);
     doc.setTextColor(49, 89, 163);
     doc.text('CRITÉRIOS E FILTROS APLICADOS NA CONSULTA', margemEsq, y);
@@ -666,7 +666,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setDrawColor(148, 163, 184);
     doc.roundedRect(margemEsq, y, larguraUtil, alturaCaixaFiltros, 1.5, 1.5, 'FD');
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(51, 65, 85);
     doc.text(linhasFiltros, margemEsq + 3, y + 5);
@@ -676,7 +676,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 3. Estatísticas e Gráficos de Distribuição
   if (incluirEstatisticas && documentos.length > 0) {
     verificarQuebraPagina(55);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('INDICADORES E DISTRIBUIÇÃO ESTATÍSTICA DO RECORTE', margemEsq, y);
@@ -717,7 +717,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       const qtd = contagemPorTipo[chave] || 0;
       const perc = documentos.length > 0 ? Math.round((qtd / documentos.length) * 100) : 0;
 
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
       doc.text(nome, margemEsq + 4, yBarra);
@@ -736,7 +736,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
         doc.roundedRect(xInicioBarra, yBarra - 3, larguraPreenchida, 3.8, 1, 1, 'F');
       }
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.text(`${qtd} (${perc}%)`, xInicioBarra + larguraMaxBarra + 4, yBarra);
       yBarra += 6.5;
     });
@@ -750,7 +750,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
 
     if (topBairros.length > 0) {
       verificarQuebraPagina(14);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       const textoBairros = 'Concentração por Bairro/Localidade: ' +
@@ -764,7 +764,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 4. Listagem Consolidada / Agrupada
   if (incluirTabela && documentos.length > 0) {
     verificarQuebraPagina(25);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('LISTAGEM CONSOLIDADA DE DOCUMENTOS', margemEsq, y);
@@ -778,7 +778,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       if (agrupamento !== 'nenhum') {
         doc.setFillColor(226, 232, 240);
         doc.roundedRect(margemEsq, y, larguraUtil, 7, 1, 1, 'F');
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('times new roman', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(30, 41, 59);
         doc.text(`${grupo.titulo} (${grupo.itens.length} registro${grupo.itens.length !== 1 ? 's' : ''})`, margemEsq + 3, y + 4.8);
@@ -788,7 +788,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       // Cabeçalho da Tabela
       doc.setFillColor(49, 89, 163);
       doc.rect(margemEsq, y, larguraUtil, 6.5, 'F');
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(255, 255, 255);
 
@@ -814,7 +814,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
           // Redesenha cabeçalho da tabela na nova página
           doc.setFillColor(49, 89, 163);
           doc.rect(margemEsq, y, larguraUtil, 6.5, 'F');
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('times new roman', 'bold');
           doc.setFontSize(7.5);
           doc.setTextColor(255, 255, 255);
           let cX = margemEsq + 2;
@@ -833,15 +833,15 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
           doc.rect(margemEsq, y - 1, larguraUtil, alturaLinha, 'F');
         }
 
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('times new roman', 'normal');
         doc.setFontSize(7.2);
         doc.setTextColor(30, 41, 59);
 
         let xAtual = margemEsq + 2;
         if (colunas.id) {
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('times new roman', 'bold');
           doc.text(String(item.idExibicao || item.id).substring(0, 11), xAtual, y + 3.5);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('times new roman', 'normal');
           xAtual += 18;
         }
         if (colunas.tipo) {
@@ -880,7 +880,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 5. Detalhamento Completo Individual (Fichas em Anexo)
   if (incluirDetalhamento && documentos.length > 0) {
     verificarQuebraPagina(35);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('DETALHAMENTO COMPLETO DOS DOCUMENTOS SELECIONADOS', margemEsq, y);
@@ -893,7 +893,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(margemEsq, y, larguraUtil, 7, 1, 1, 'FD');
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(49, 89, 163);
       doc.text(
@@ -903,7 +903,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       );
       y += 10;
 
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
 
@@ -922,10 +922,10 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
         y += linhasMeta.length * 4.2 + 2;
       }
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.text('Relato / Descrição:', margemEsq + 2, y);
       y += 4;
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       const linhasRelato = doc.splitTextToSize(String(item.descricaoNormalizada || 'Sem descrição'), larguraUtil - 4);
       doc.text(linhasRelato, margemEsq + 2, y);
       y += linhasRelato.length * 4.2 + 4;
@@ -939,7 +939,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 6. Parecer Técnico / Observações do Conselheiro
   if (observacoesRelatorio && observacoesRelatorio.trim() !== '') {
     verificarQuebraPagina(30);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('PARECER TÉCNICO / OBSERVAÇÕES DO CONSELHEIRO RELATOR', margemEsq, y);
@@ -952,7 +952,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setDrawColor(252, 211, 77);
     doc.roundedRect(margemEsq, y, larguraUtil, alturaObs, 1.5, 1.5, 'FD');
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(51, 65, 85);
     doc.text(linhasObs, margemEsq + 3, y + 5.5);
@@ -967,12 +967,12 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setLineWidth(0.4);
     doc.line(60, y + 10, 150, y + 10);
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(30, 41, 59);
     doc.text(String(conselheiroEmissor || 'Conselheiro(a) Tutelar'), larguraPagina / 2, y + 15, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text('Conselho Tutelar de Panambi/RS - Documento Oficial Gerado pelo Sistema', larguraPagina / 2, y + 19.5, { align: 'center' });
@@ -982,7 +982,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   const totalPaginas = doc.internal.getNumberOfPages();
   for (let p = 1; p <= totalPaginas; p++) {
     doc.setPage(p);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
     doc.line(margemEsq, 284, margemDir, 284);
