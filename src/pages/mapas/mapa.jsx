@@ -11,7 +11,6 @@ if (typeof window !== 'undefined') {
 import 'leaflet.heat';
 
 import { buscarMarcadores } from '../../api/marcadores';
-import { marcadoresFalsos } from '../../utils/dadosFalsos';
 
 // CSS do Leaflet e estilos da página
 import 'leaflet/dist/leaflet.css'; 
@@ -128,12 +127,9 @@ const Mapa = () => {
             const dados = await buscarMarcadores();
             if (dados?.length) {
                 setMarcadores(dados);
-            } else {
-                setMarcadores(marcadoresFalsos);
-            }
+            } 
         } catch (error) {
             console.error('[MAPA] Erro ao carregar marcadores, aplicando dados de contingência:', error);
-            setMarcadores(marcadoresFalsos);
         } finally {
             setLoading(false);
         }

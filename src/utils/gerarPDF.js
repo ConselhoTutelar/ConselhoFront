@@ -11,15 +11,53 @@ const CABECALHO = cabecalho;
 // Função auxiliar para formatar data
 const formatarData = (data) => {
   if (!data) return 'N/A';
+  // Se for uma string AAAA-MM-DD, formata diretamente DD/MM/AAAA para não sofrer deslocamento de fuso horário
+  if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(data)) {
+    const apenasData = data.substring(0, 10);
+    const [ano, mes, dia] = apenasData.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
   const date = new Date(data);
   if (isNaN(date.getTime())) return String(data);
   return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 };
 
-// Função auxiliar para formatar hora
+// Função auxiliar para formatar hora (não extrai de datas puras para evitar falso '03:00' do UTC-3)
 const formatarHora = (hora) => {
-  if (!hora) return 'N/A';
-  return String(hora).substring(0, 5); // Formato HH:mm
+  if (!hora || String(hora).trim() === '' || String(hora).trim() === 'N/A') {
+    return 'N/A';
+  }
+  const horaStr = String(hora).trim();
+  if (/^\d{2}:\d{2}/.test(horaStr)) {
+    return horaStr.substring(0, 5); // Formato HH:mm
+  }
+  return horaStr.substring(0, 5);
+};
+
+// Função auxiliar para extrair a hora de qualquer formato de documento (coluna própria ou JSON Observacao)
+const extrairHoraDocumento = (doc) => {
+  if (!doc) return 'N/A';
+  if (doc.hora && String(doc.hora).trim() !== '' && String(doc.hora).trim() !== 'N/A') return doc.hora;
+  if (doc.Hora && String(doc.Hora).trim() !== '' && String(doc.Hora).trim() !== 'N/A') return doc.Hora;
+  if (doc.horaDenuncia) return doc.horaDenuncia;
+  if (doc.horaNotificacao) return doc.horaNotificacao;
+  if (doc.horaTermo) return doc.horaTermo;
+  if (doc.horaAtendimento) return doc.horaAtendimento;
+
+  if (doc.obsParsed) {
+    const horaObs = doc.obsParsed.horaDenuncia || doc.obsParsed.horaNotificacao || doc.obsParsed.horaTermo || doc.obsParsed.horaAtendimento;
+    if (horaObs) return horaObs;
+  }
+
+  if (doc.Observacao) {
+    try {
+      const obs = typeof doc.Observacao === 'object' ? doc.Observacao : JSON.parse(doc.Observacao);
+      const horaObs = obs?.horaDenuncia || obs?.horaNotificacao || obs?.horaTermo || obs?.horaAtendimento;
+      if (horaObs) return horaObs;
+    } catch (e) {}
+  }
+
+  return 'N/A';
 };
 
 // Função auxiliar para formatar observações (pode ser JSON ou texto simples)
@@ -183,6 +221,33 @@ const adicionarTexto = (doc, texto, x, y, maxWidth = 170, lineHeight = 6) => {
   return y;
 };
 
+// Função auxiliar para adicionar Data e Hora na mesma linha com sublinhado padrão abaixo
+const adicionarLinhaDataHora = (doc, data, hora, y, xInicio = 20, xFim = 190) => {
+  if (y > 270) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.setFontSize(12);
+
+  // Data (à esquerda)
+  doc.setFont('times', 'bold');
+  doc.text('Data: ', xInicio, y);
+  const wData = doc.getTextWidth('Data: ');
+  doc.setFont('times', 'normal');
+  doc.text(formatarData(data), xInicio + wData, y);
+
+  // Hora (à direita na mesma linha)
+  const xHora = 60;
+  doc.setFont('times', 'bold');
+  doc.text('Hora: ', xHora, y);
+  const wHora = doc.getTextWidth('Hora: ');
+  doc.setFont('times', 'normal');
+  doc.text(formatarHora(hora), xHora + wHora, y);
+
+  return y + 8;
+};
+
 // Função auxiliar para adicionar assinatura no PDF
 const adicionarAssinatura = (doc, documento, y = 250) => {
   let assinatura = documento.assinatura || null;
@@ -310,7 +375,7 @@ export const gerarPDFDenuncia = (denuncia) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
   doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
   y += 12;
@@ -318,8 +383,7 @@ export const gerarPDFDenuncia = (denuncia) => {
   doc.setFont('times', 'normal');
 
   // Informações da Denúncia
-  y = adicionarCampo(doc, 'Número da Denúncia:', denuncia.nrDenuncia || denuncia.id || 'N/A', 20, y, 170);
-  y = adicionarCampo(doc, 'Data:', formatarData(denuncia.Data || denuncia.data), 20, y, 170);
+  y = adicionarLinhaDataHora(doc, denuncia.Data || denuncia.data, extrairHoraDocumento(denuncia), y);
   y = adicionarCampo(doc, 'Tipo de Denúncia:', denuncia.TipoDenuncia || denuncia.tipoDenuncia || 'N/A', 20, y, 170);
 
   if (denuncia.nomeConselheiro || denuncia.conselheiro) {
@@ -396,7 +460,7 @@ export const gerarPDFAtendimento = (atendimento) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
   doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
   y += 12;
@@ -404,9 +468,7 @@ export const gerarPDFAtendimento = (atendimento) => {
   doc.setFont('times', 'normal');
 
   // Informações do Atendimento
-  y = adicionarCampo(doc, 'ID do Atendimento:', atendimento.idAtendimento || atendimento.id || 'N/A', 20, y, 170);
-  y = adicionarCampo(doc, 'Data:', formatarData(atendimento.Data || atendimento.data), 20, y, 170);
-  y = adicionarCampo(doc, 'Hora:', formatarHora(atendimento.Hora || atendimento.hora), 20, y, 170);
+  y = adicionarLinhaDataHora(doc, atendimento.Data || atendimento.data, extrairHoraDocumento(atendimento), y);
 
   if (atendimento.direitoVioladoDescricao || atendimento.direitoViolado) {
     y = adicionarCampo(doc, 'Direito Violado:', atendimento.direitoVioladoDescricao || atendimento.direitoViolado, 20, y, 170);
@@ -449,7 +511,7 @@ export const gerarPDFNotificacao = (notificacao) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
   doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
   y += 12;
@@ -457,10 +519,7 @@ export const gerarPDFNotificacao = (notificacao) => {
   doc.setFont('times', 'normal');
 
   // Informações da Notificação
-  y = adicionarCampo(doc, 'ID da Notificação:', notificacao.id || 'N/A', 20, y, 170);
-  if (notificacao.data || notificacao.Data) {
-    y = adicionarCampo(doc, 'Data:', formatarData(notificacao.data || notificacao.Data), 20, y, 170);
-  }
+  y = adicionarLinhaDataHora(doc, notificacao.data || notificacao.Data, extrairHoraDocumento(notificacao), y);
   if (notificacao.redator || notificacao.recebedor) {
     y = adicionarCampo(doc, 'Nome de quem recebeu:', notificacao.redator || notificacao.recebedor, 20, y, 170);
   }
@@ -503,16 +562,15 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
-  doc.text('TERMO DE MEDIDAS APLICADAS (Criança/Adolescente)', 105, y, { align: 'center' });
+  doc.text('TERMO APLICAÇÃO MEDIDAS PARA A CRIANÇA OU ADOLESCENTE', 105, y, { align: 'center' });
   y += 12;
   doc.setFontSize(12);
   doc.setFont('times', 'normal');
 
   // Informações do Termo
-  y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
-  y = adicionarCampo(doc, 'Data:', formatarData(termo.data || termo.Data), 20, y, 170);
+  y = adicionarLinhaDataHora(doc, termo.data || termo.Data, extrairHoraDocumento(termo), y);
 
   if (termo.nomeMenor) {
     y = adicionarCampo(doc, 'Criança/Adolescente:', termo.nomeMenor, 20, y, 170);
@@ -524,7 +582,7 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
     y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
 
-  y = adicionarCampo(doc, 'Descrição:', null, 20, y, 170);
+  y = adicionarCampo(doc, 'Aplico às medidas de proteção à criança/adolescente:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
   const yAssinatura = Math.max(y + 15, 245);
@@ -555,7 +613,7 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   y += 10;
 
   // Título do documento abaixo do cabeçalho
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
   doc.text('TERMO DE APLICAÇÃO DE MEDIDAS AOS PAIS OU RESPONSÁVEL', 105, y, { align: 'center' });
   y += 12;
@@ -563,11 +621,10 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   doc.setFont('times', 'normal');
 
   // Informações do Termo
-  y = adicionarCampo(doc, 'ID do Termo:', termo.idmedida_aplicada || termo.id || 'N/A', 20, y, 170);
-  y = adicionarCampo(doc, 'Data:', formatarData(termo.data || termo.Data), 20, y, 170);
+  y = adicionarLinhaDataHora(doc, termo.data || termo.Data, extrairHoraDocumento(termo), y);
 
   if (termo.nomeResponsavel) {
-    y = adicionarCampo(doc, 'Responsável:', termo.nomeResponsavel, 20, y, 170);
+    y = adicionarCampo(doc, 'Aplico às medidas de proteção aos pais/responsável:', termo.nomeResponsavel, 20, y, 170);
   }
   if (termo.inciso) {
     y = adicionarCampo(doc, 'Inciso (Art. 129 ECA):', `Inciso ${termo.inciso}`, 20, y, 170);
@@ -579,7 +636,7 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
     y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
 
-  y = adicionarCampo(doc, 'Descrição:', null, 20, y, 170);
+  y = adicionarCampo(doc, 'Aplico às medidas de proteção aos pais/responsável:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
   const yAssinatura = Math.max(y + 15, 245);

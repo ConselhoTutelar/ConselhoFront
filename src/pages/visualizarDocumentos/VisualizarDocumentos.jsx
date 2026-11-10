@@ -22,7 +22,6 @@ import {
   exportarRelatorioCSV,
   formatarObservacoes
 } from '../../utils/gerarPDF';
-import { documentosFalsos } from '../../utils/dadosFalsos';
 import { useAuth } from '../../context/AuthContext';
 import './VisualizarDocumentos.css';
 
@@ -187,13 +186,10 @@ function VisualizarDocumentos() {
           termosMedidasMenor: dados.termosMedidasMenor || [],
           termosMedidasResponsavel: dados.termosMedidasResponsavel || []
         });
-      } else {
-        setDocumentos(documentosFalsos);
-      }
+      } 
     } catch (err) {
       console.error('Erro ao carregar documentos do banco:', err);
       setError('Aviso: Não foi possível conectar ao banco de dados (' + err.message + '). Exibindo dados em cache.');
-      setDocumentos(documentosFalsos);
     } finally {
       setLoading(false);
     }
@@ -201,6 +197,11 @@ function VisualizarDocumentos() {
 
   const formatarData = (data) => {
     if (!data) return 'N/A';
+    if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(data)) {
+      const apenasData = data.substring(0, 10);
+      const [ano, mes, dia] = apenasData.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
     const date = new Date(data);
     if (isNaN(date.getTime())) return String(data);
     return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
@@ -296,12 +297,27 @@ function VisualizarDocumentos() {
       const temAveriguacao = Boolean(doc.Data_averiguacao);
       const temAssinatura = Boolean(doc.assinatura || obs?.assinatura);
 
+      const horaNormalizada =
+        doc.Hora ||
+        doc.hora ||
+        doc.horaDenuncia ||
+        doc.horaNotificacao ||
+        doc.horaTermo ||
+        doc.horaAtendimento ||
+        obs?.horaDenuncia ||
+        obs?.horaNotificacao ||
+        obs?.horaTermo ||
+        obs?.horaAtendimento ||
+        '';
+
       return {
         ...doc,
         uid,
         id: idExibicao,
         idExibicao,
         tipo,
+        hora: horaNormalizada,
+        horaNormalizada,
         dataRaw,
         dataObj,
         mesAnoChave,
@@ -1582,7 +1598,7 @@ function VisualizarDocumentos() {
               <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                 <div>{getTipoBadge(docDetalhe.tipo)}</div>
                 <span className="text-muted small">
-                  Data do Registro: <strong>{formatarData(docDetalhe.dataRaw)}</strong>
+                  Data do Registro: <strong>{formatarData(docDetalhe.dataRaw)}{docDetalhe.horaNormalizada ? ` às ${String(docDetalhe.horaNormalizada).substring(0, 5)}` : ''}</strong>
                 </span>
               </div>
 
