@@ -1,24 +1,63 @@
 import jsPDF from 'jspdf';
 
 // Informações do cabeçalho padrão
-const CABECALHO = {
-  titulo: 'Conselho Tutelar - Panambi',
-  endereco: 'Rua: Hermann Mayer, 43, Térreo, Centro, Panambi/RS.',
-  contato: 'Fone (55) 3375 6592/84195737 Email: conselhotutelar@panambi.rs.gov.br'
+const cabecalho = {
+  titulo: 'CONSELHO TUTELAR - PANAMBI',
+  endereco: 'Rua: Antônio Schutz, 188, Bairro: Piratini, Panambi/RS.',
+  contato: 'Fone (55) 3376 9123/84195737 Email: conselhotutelar@panambi.rs.gov.br'
 };
+const CABECALHO = cabecalho;
 
 // Função auxiliar para formatar data
 const formatarData = (data) => {
   if (!data) return 'N/A';
+  // Se for uma string AAAA-MM-DD, formata diretamente DD/MM/AAAA para não sofrer deslocamento de fuso horário
+  if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(data)) {
+    const apenasData = data.substring(0, 10);
+    const [ano, mes, dia] = apenasData.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
   const date = new Date(data);
   if (isNaN(date.getTime())) return String(data);
   return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 };
 
-// Função auxiliar para formatar hora
+// Função auxiliar para formatar hora (não extrai de datas puras para evitar falso '03:00' do UTC-3)
 const formatarHora = (hora) => {
-  if (!hora) return 'N/A';
-  return String(hora).substring(0, 5); // Formato HH:mm
+  if (!hora || String(hora).trim() === '' || String(hora).trim() === 'N/A') {
+    return 'N/A';
+  }
+  const horaStr = String(hora).trim();
+  if (/^\d{2}:\d{2}/.test(horaStr)) {
+    return horaStr.substring(0, 5); // Formato HH:mm
+  }
+  return horaStr.substring(0, 5);
+};
+
+// Função auxiliar para extrair a hora de qualquer formato de documento (coluna própria ou JSON Observacao)
+const extrairHoraDocumento = (doc) => {
+  if (!doc) return 'N/A';
+  if (doc.hora && String(doc.hora).trim() !== '' && String(doc.hora).trim() !== 'N/A') return doc.hora;
+  if (doc.Hora && String(doc.Hora).trim() !== '' && String(doc.Hora).trim() !== 'N/A') return doc.Hora;
+  if (doc.horaDenuncia) return doc.horaDenuncia;
+  if (doc.horaNotificacao) return doc.horaNotificacao;
+  if (doc.horaTermo) return doc.horaTermo;
+  if (doc.horaAtendimento) return doc.horaAtendimento;
+
+  if (doc.obsParsed) {
+    const horaObs = doc.obsParsed.horaDenuncia || doc.obsParsed.horaNotificacao || doc.obsParsed.horaTermo || doc.obsParsed.horaAtendimento;
+    if (horaObs) return horaObs;
+  }
+
+  if (doc.Observacao) {
+    try {
+      const obs = typeof doc.Observacao === 'object' ? doc.Observacao : JSON.parse(doc.Observacao);
+      const horaObs = obs?.horaDenuncia || obs?.horaNotificacao || obs?.horaTermo || obs?.horaAtendimento;
+      if (horaObs) return horaObs;
+    } catch (e) {}
+  }
+
+  return 'N/A';
 };
 
 // Função auxiliar para formatar observações (pode ser JSON ou texto simples)
@@ -63,15 +102,154 @@ export const formatarObservacoes = (observacao) => {
   }
 };
 
-// Função auxiliar para adicionar texto com quebra de linha automática
-const adicionarTexto = (doc, texto, x, y, maxWidth, lineHeight = 7) => {
+// Função auxiliar para quebrar texto mantendo recuo na primeira linha se necessário
+const splitComPrimeiraLinha = (doc, texto, larguraPrimeira, larguraDemais) => {
+  const paragrafos = String(texto || '').split('\n');
+  const resultado = [];
+
+  for (let p = 0; p < paragrafos.length; p++) {
+    const paragrafo = paragrafos[p].trim();
+    if (!paragrafo) {
+      if (resultado.length > 0) resultado.push('');
+      continue;
+    }
+
+    const palavras = paragrafo.split(/\s+/);
+    let linhaAtual = '';
+
+    for (let i = 0; i < palavras.length; i++) {
+      const palavra = palavras[i];
+      const maxL = resultado.length === 0 ? larguraPrimeira : larguraDemais;
+      const tentativa = linhaAtual ? linhaAtual + ' ' + palavra : palavra;
+
+      if (doc.getTextWidth(tentativa) <= maxL) {
+        linhaAtual = tentativa;
+      } else {
+        if (linhaAtual) {
+          resultado.push(linhaAtual);
+          const maxProx = resultado.length === 0 ? larguraPrimeira : larguraDemais;
+          if (doc.getTextWidth(palavra) <= maxProx) {
+            linhaAtual = palavra;
+          } else {
+            const pedacos = doc.splitTextToSize(palavra, maxProx);
+            for (let k = 0; k < pedacos.length - 1; k++) {
+              resultado.push(pedacos[k]);
+            }
+            linhaAtual = pedacos[pedacos.length - 1];
+          }
+        } else {
+          const pedacos = doc.splitTextToSize(palavra, maxL);
+          for (let k = 0; k < pedacos.length - 1; k++) {
+            resultado.push(pedacos[k]);
+          }
+          linhaAtual = pedacos[pedacos.length - 1];
+        }
+      }
+    }
+    if (linhaAtual) {
+      resultado.push(linhaAtual);
+    }
+  }
+
+  return resultado.length > 0 ? resultado : [''];
+};
+
+// Função auxiliar para adicionar campo com apenas o título da informação em negrito e valor em normal (tamanho 12)
+const adicionarCampo = (doc, rotulo, valor, x, y, maxWidth = 170, lineHeight = 6) => {
+  doc.setFontSize(12);
+
+  const rotuloLimpo = String(rotulo || '').trim();
+  const rotuloComDoisPontos = rotuloLimpo.endsWith(':') ? rotuloLimpo : rotuloLimpo + ':';
+  const rotuloComEspaco = rotuloComDoisPontos + ' ';
+
+  doc.setFont('times', 'bold');
+  const wRotulo = doc.getTextWidth(rotuloComEspaco);
+
+  if (y > 270) {
+    doc.addPage();
+    y = 20;
+  }
+
+  // Se não houver valor, apenas imprime o título/legenda da informação em negrito
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    doc.setFont('times', 'bold');
+    doc.text(rotuloComDoisPontos, x, y);
+    doc.setFont('times', 'normal');
+    return y + lineHeight;
+  }
+
+  const valorStr = String(valor);
+  doc.setFont('times', 'normal');
+
+  const espacoPrimeiraLinha = maxWidth - wRotulo;
+  const linhas = splitComPrimeiraLinha(doc, valorStr, espacoPrimeiraLinha, maxWidth);
+
+  // Título da informação em negrito
+  doc.setFont('times', 'bold');
+  doc.text(rotuloComEspaco, x, y);
+
+  // Informação em fonte normal
+  doc.setFont('times', 'normal');
+  if (linhas.length > 0) {
+    doc.text(linhas[0], x + wRotulo, y);
+    for (let i = 1; i < linhas.length; i++) {
+      y += lineHeight;
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(linhas[i], x, y);
+    }
+  }
+
+  return y + lineHeight;
+};
+
+// Função auxiliar para adicionar texto normal com quebra de linha automática (tamanho 12)
+const adicionarTexto = (doc, texto, x, y, maxWidth = 170, lineHeight = 6) => {
+  doc.setFont('times', 'normal');
+  doc.setFontSize(12);
   const lines = doc.splitTextToSize(String(texto || 'N/A'), maxWidth);
-  doc.text(lines, x, y);
-  return y + (lines.length * lineHeight);
+  for (let i = 0; i < lines.length; i++) {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.text(lines[i], x, y);
+    y += lineHeight;
+  }
+  return y;
+};
+
+// Função auxiliar para adicionar Data e Hora na mesma linha com sublinhado padrão abaixo
+const adicionarLinhaDataHora = (doc, data, hora, y, xInicio = 20, xFim = 190) => {
+  if (y > 270) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.setFontSize(12);
+
+  // Data (à esquerda)
+  doc.setFont('times', 'bold');
+  doc.text('Data: ', xInicio, y);
+  const wData = doc.getTextWidth('Data: ');
+  doc.setFont('times', 'normal');
+  doc.text(formatarData(data), xInicio + wData, y);
+
+  // Hora (à direita na mesma linha)
+  const xHora = 60;
+  doc.setFont('times', 'bold');
+  doc.text('Hora: ', xHora, y);
+  const wHora = doc.getTextWidth('Hora: ');
+  doc.setFont('times', 'normal');
+  doc.text(formatarHora(hora), xHora + wHora, y);
+
+  return y + 8;
 };
 
 // Função auxiliar para adicionar assinatura no PDF
-const adicionarAssinatura = (doc, documento, y = 270) => {
+const adicionarAssinatura = (doc, documento, y = 250) => {
   let assinatura = documento.assinatura || null;
   
   if (!assinatura && documento.Observacao) {
@@ -85,29 +263,41 @@ const adicionarAssinatura = (doc, documento, y = 270) => {
     }
   }
   
+  if (y > 255) {
+    doc.addPage();
+    y = 30;
+  }
+
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+
   if (assinatura) {
     if (assinatura.tipo === 'certificado' && assinatura.certificado) {
       y = adicionarSeloAssinaturaDigital(doc, y, assinatura);
     } else if (assinatura.tipo === 'digital' && assinatura.nome) {
-      doc.setFontSize(9);
-      doc.text(`Ass. Digital: ${assinatura.nome}`, 20, y);
+      doc.setFont('times', 'bold');
+      doc.text('Ass. Digital: ', 20, y);
+      const w = doc.getTextWidth('Ass. Digital: ');
+      doc.setFont('times', 'normal');
+      doc.text(String(assinatura.nome), 20 + w, y);
     } else if (assinatura.tipo === 'fisica' && assinatura.imagem) {
-      doc.setFontSize(9);
+      doc.setFont('times', 'bold');
       doc.text('Assinatura Física:', 20, y);
-      y += 5;
+      y += 6;
       try {
         doc.addImage(assinatura.imagem, 'PNG', 20, y, 60, 20);
         y += 25;
       } catch (e) {
+        doc.setFont('times', 'normal');
         doc.text('(Imagem de assinatura)', 20, y);
-        y += 5;
+        y += 6;
       }
     } else {
-      doc.setFontSize(9);
+      doc.setFont('times', 'normal');
       doc.text('Ass. Digital Conselheiro (a) Tutelar', 20, y);
     }
   } else {
-    doc.setFontSize(9);
+    doc.setFont('times', 'normal');
     doc.text('Ass. Digital Conselheiro (a) Tutelar', 20, y);
   }
   
@@ -129,7 +319,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
   doc.line(x + 5, y + 12, x + largura - 5, y + 12);
   
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setTextColor(0, 102, 204);
   doc.text('ASSINATURA DIGITAL ICP-BRASIL', x + largura / 2, y + 8, { align: 'center' });
   
@@ -137,7 +327,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
   doc.text('[ICP]', x + 8, y + 20);
   
   doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.setTextColor(0, 0, 0);
   
   const dataHora = new Date().toLocaleString('pt-BR', {
@@ -147,6 +337,7 @@ const adicionarSeloAssinaturaDigital = (doc, y, assinatura) => {
     hour: '2-digit',
     minute: '2-digit'
   });
+  
   
   doc.text(`Documento assinado digitalmente em ${dataHora}`, x + 20, y + 20);
   doc.text('Certificado Digital ICP-Brasil - Autenticidade garantida', x + 20, y + 27);
@@ -166,70 +357,83 @@ export const gerarPDFDenuncia = (denuncia) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
+  // Título do documento abaixo do cabeçalho
+  doc.setFontSize(14);
+  doc.setFont('times', 'bold');
+  doc.text('FICHA RECEBIMENTO DE DENÚNCIA', 105, y, { align: 'center' });
+  y += 12;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DA DENÚNCIA', 20, y);
-  y += 10;
+  doc.setFont('times', 'normal');
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  y = adicionarTexto(doc, `Número da Denúncia: ${denuncia.nrDenuncia || denuncia.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(denuncia.Data || denuncia.data)}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Tipo de Denúncia: ${denuncia.TipoDenuncia || denuncia.tipoDenuncia || 'N/A'}`, 20, y, 170);
-  y += 5;
+  // Informações da Denúncia
+  y = adicionarLinhaDataHora(doc, denuncia.Data || denuncia.data, extrairHoraDocumento(denuncia), y);
+  y = adicionarCampo(doc, 'Tipo de Denúncia:', denuncia.TipoDenuncia || denuncia.tipoDenuncia || 'N/A', 20, y, 170);
+
   if (denuncia.nomeConselheiro || denuncia.conselheiro) {
-    y = adicionarTexto(doc, `Conselheiro Responsável: ${denuncia.nomeConselheiro || denuncia.conselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Conselheiro Responsável:', denuncia.nomeConselheiro || denuncia.conselheiro, 20, y, 170);
   }
   if (denuncia.direitoVioladoDescricao || denuncia.direitoViolado) {
-    y = adicionarTexto(doc, `Direito Violado: ${denuncia.direitoVioladoDescricao || denuncia.direitoViolado}`, 20, y, 170);
-    y += 5;
-  }
-  y = adicionarTexto(doc, `Descrição dos Fatos:`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, denuncia.DescricaoFato || denuncia.descricao || 'N/A', 20, y, 170);
-  y += 5;
-  
-  if (denuncia.Observacao) {
-    const observacoesFormatadas = formatarObservacoes(denuncia.Observacao);
-    if (observacoesFormatadas) {
-      y = adicionarTexto(doc, `Observações:`, 20, y, 170);
-      y += 5;
-      y = adicionarTexto(doc, observacoesFormatadas, 20, y, 170);
-      y += 5;
-    }
-  } else if (denuncia.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${denuncia.endereco}`, 20, y, 170);
-    y += 5;
-  }
-  
-  if (denuncia.Data_averiguacao) {
-    y = adicionarTexto(doc, `Data de Averiguação: ${formatarData(denuncia.Data_averiguacao)}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Direito Violado:', denuncia.direitoVioladoDescricao || denuncia.direitoViolado, 20, y, 170);
   }
 
-  adicionarAssinatura(doc, denuncia);
+  y = adicionarCampo(doc, 'Descrição dos Fatos:', null, 20, y, 170);
+  y = adicionarTexto(doc, denuncia.DescricaoFato || denuncia.descricao || 'N/A', 20, y, 170);
+  y += 4;
+
+  if (denuncia.Observacao) {
+    y = adicionarCampo(doc, 'Observações:', null, 20, y, 170);
+    let obsData = null;
+    try {
+      obsData = typeof denuncia.Observacao === 'object' ? denuncia.Observacao : JSON.parse(denuncia.Observacao);
+    } catch (e) {}
+
+    if (obsData && typeof obsData === 'object') {
+      if (obsData.identificacao && obsData.identificacao !== 'N/A') {
+        y = adicionarCampo(doc, 'Identificação:', obsData.identificacao, 20, y, 170);
+      }
+      if (obsData.criancasAdolescentes && obsData.criancasAdolescentes !== 'N/A') {
+        y = adicionarCampo(doc, 'Crianças/Adolescentes:', obsData.criancasAdolescentes, 20, y, 170);
+      }
+      if (obsData.paisResponsaveis && obsData.paisResponsaveis !== 'N/A') {
+        y = adicionarCampo(doc, 'Pais/Responsáveis:', obsData.paisResponsaveis, 20, y, 170);
+      }
+      if (obsData.endereco && obsData.endereco !== '-' && obsData.endereco !== 'N/A') {
+        y = adicionarCampo(doc, 'Endereço:', obsData.endereco, 20, y, 170);
+      }
+      if (obsData.conselheiroAveriguador && obsData.conselheiroAveriguador !== 'N/A') {
+        y = adicionarCampo(doc, 'Conselheiro Averiguador:', obsData.conselheiroAveriguador, 20, y, 170);
+      }
+    } else {
+      y = adicionarTexto(doc, String(denuncia.Observacao), 20, y, 170);
+    }
+    y += 4;
+  } else if (denuncia.endereco) {
+    y = adicionarCampo(doc, 'Endereço:', denuncia.endereco, 20, y, 170);
+  }
+
+  if (denuncia.Data_averiguacao) {
+    y = adicionarCampo(doc, 'Data de Averiguação:', formatarData(denuncia.Data_averiguacao), 20, y, 170);
+  }
+
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, denuncia, yAssinatura);
   doc.save(`Denuncia_${denuncia.nrDenuncia || denuncia.id || 'N/A'}.pdf`);
 };
 
@@ -238,57 +442,49 @@ export const gerarPDFAtendimento = (atendimento) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
+  // Título do documento abaixo do cabeçalho
+  doc.setFontSize(14);
+  doc.setFont('times', 'bold');
+  doc.text('FICHA DE ATENDIMENTO', 105, y, { align: 'center' });
+  y += 12;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO ATENDIMENTO', 20, y);
-  y += 10;
+  doc.setFont('times', 'normal');
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Atendimento: ${atendimento.idAtendimento || atendimento.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(atendimento.Data || atendimento.data)}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Hora: ${formatarHora(atendimento.Hora || atendimento.hora)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Atendimento
+  y = adicionarLinhaDataHora(doc, atendimento.Data || atendimento.data, extrairHoraDocumento(atendimento), y);
+
   if (atendimento.direitoVioladoDescricao || atendimento.direitoViolado) {
-    y = adicionarTexto(doc, `Direito Violado: ${atendimento.direitoVioladoDescricao || atendimento.direitoViolado}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Direito Violado:', atendimento.direitoVioladoDescricao || atendimento.direitoViolado, 20, y, 170);
   }
   if (atendimento.profissional || atendimento.nomeConselheiro) {
-    y = adicionarTexto(doc, `Profissional / Conselheiro: ${atendimento.profissional || atendimento.nomeConselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Profissional / Conselheiro:', atendimento.profissional || atendimento.nomeConselheiro, 20, y, 170);
   }
   if (atendimento.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${atendimento.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', atendimento.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Relato:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Relato:', null, 20, y, 170);
   y = adicionarTexto(doc, atendimento.Relato || atendimento.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, atendimento);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, atendimento, yAssinatura);
   doc.save(`Atendimento_${atendimento.idAtendimento || atendimento.id || 'N/A'}.pdf`);
 };
 
@@ -297,57 +493,49 @@ export const gerarPDFNotificacao = (notificacao) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
+  doc.setFontSize(12);
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
+  // Título do documento abaixo do cabeçalho
+  doc.setFontSize(14);
+  doc.setFont('times', 'bold');
+  doc.text('NOTIFICAÇÃO', 105, y, { align: 'center' });
+  y += 12;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DA NOTIFICAÇÃO', 20, y);
-  y += 10;
+  doc.setFont('times', 'normal');
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  y = adicionarTexto(doc, `ID da Notificação: ${notificacao.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  if (notificacao.data || notificacao.Data) {
-    y = adicionarTexto(doc, `Data: ${formatarData(notificacao.data || notificacao.Data)}`, 20, y, 170);
-    y += 5;
-  }
+  // Informações da Notificação
+  y = adicionarLinhaDataHora(doc, notificacao.data || notificacao.Data, extrairHoraDocumento(notificacao), y);
   if (notificacao.redator || notificacao.recebedor) {
-    y = adicionarTexto(doc, `Nome de quem recebeu: ${notificacao.redator || notificacao.recebedor}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Nome de quem recebeu:', notificacao.redator || notificacao.recebedor, 20, y, 170);
   }
   if (notificacao.nomeConselheiro) {
-    y = adicionarTexto(doc, `Conselheiro Responsável: ${notificacao.nomeConselheiro}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Conselheiro Responsável:', notificacao.nomeConselheiro, 20, y, 170);
   }
   if (notificacao.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${notificacao.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', notificacao.endereco, 20, y, 170);
   }
   if (notificacao.descricao || (typeof notificacao.assinatura === 'string' && notificacao.assinatura)) {
-    y = adicionarTexto(doc, `Segunda via da Convocação / Descrição:`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Segunda via da Convocação / Descrição:', null, 20, y, 170);
     y = adicionarTexto(doc, notificacao.descricao || notificacao.assinatura, 20, y, 170);
   }
 
-  adicionarAssinatura(doc, notificacao);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, notificacao, yAssinatura);
   doc.save(`Notificacao_${notificacao.id || 'N/A'}.pdf`);
 };
 
@@ -356,58 +544,49 @@ export const gerarPDFTermoMedidasMenor = (termo) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
-  y += 5;
   doc.setFontSize(12);
-  doc.text('(Criança/Adolescente)', 105, y, { align: 'center' });
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
+  // Título do documento abaixo do cabeçalho
+  doc.setFontSize(14);
+  doc.setFont('times', 'bold');
+  doc.text('TERMO APLICAÇÃO MEDIDAS PARA A CRIANÇA OU ADOLESCENTE', 105, y, { align: 'center' });
+  y += 12;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO TERMO', 20, y);
-  y += 10;
+  doc.setFont('times', 'normal');
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(termo.data || termo.Data)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Termo
+  y = adicionarLinhaDataHora(doc, termo.data || termo.Data, extrairHoraDocumento(termo), y);
+
   if (termo.nomeMenor) {
-    y = adicionarTexto(doc, `Criança/Adolescente: ${termo.nomeMenor}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Criança/Adolescente:', termo.nomeMenor, 20, y, 170);
   }
   if (termo.inciso) {
-    y = adicionarTexto(doc, `Inciso (Art. 101 ECA): Inciso ${termo.inciso}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Inciso (Art. 101 ECA):', `Inciso ${termo.inciso}`, 20, y, 170);
   }
   if (termo.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${termo.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Descrição:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Aplico às medidas de proteção à criança/adolescente:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, termo);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, termo, yAssinatura);
   doc.save(`TermoMedidasMenor_${termo.idmedida_aplicada || termo.id || 'N/A'}.pdf`);
 };
 
@@ -416,62 +595,52 @@ export const gerarPDFTermoMedidasResponsavel = (termo) => {
   const doc = new jsPDF();
   let y = 20;
 
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TERMO DE MEDIDAS APLICADAS', 105, y, { align: 'center' });
-  y += 5;
   doc.setFontSize(12);
-  doc.text('(Responsável)', 105, y, { align: 'center' });
+
+  // Cabeçalho institucional
+  doc.setFont('times', 'bold');
+  doc.text(cabecalho.titulo, 105, y, { align: 'center' });
+  y += 6;
+  doc.setFont('times', 'normal');
+  doc.text(cabecalho.endereco, 105, y, { align: 'center' });
+  y += 6;
+  doc.text(cabecalho.contato, 105, y, { align: 'center' });
   y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(CABECALHO.titulo, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.endereco, 105, y, { align: 'center' });
-  y += 5;
-  doc.text(CABECALHO.contato, 105, y, { align: 'center' });
-  y += 15;
-
+  // Linha divisória
   doc.setLineWidth(0.5);
   doc.line(20, y, 190, y);
   y += 10;
 
+  // Título do documento abaixo do cabeçalho
+  doc.setFontSize(14);
+  doc.setFont('times', 'bold');
+  doc.text('TERMO DE APLICAÇÃO DE MEDIDAS AOS PAIS OU RESPONSÁVEL', 105, y, { align: 'center' });
+  y += 12;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO TERMO', 20, y);
-  y += 10;
+  doc.setFont('times', 'normal');
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  y = adicionarTexto(doc, `ID do Termo: ${termo.idmedida_aplicada || termo.id || 'N/A'}`, 20, y, 170);
-  y += 5;
-  y = adicionarTexto(doc, `Data: ${formatarData(termo.data || termo.Data)}`, 20, y, 170);
-  y += 5;
-  
+  // Informações do Termo
+  y = adicionarLinhaDataHora(doc, termo.data || termo.Data, extrairHoraDocumento(termo), y);
+
   if (termo.nomeResponsavel) {
-    y = adicionarTexto(doc, `Responsável: ${termo.nomeResponsavel}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Aplico às medidas de proteção aos pais/responsável:', termo.nomeResponsavel, 20, y, 170);
   }
   if (termo.inciso) {
-    y = adicionarTexto(doc, `Inciso (Art. 129 ECA): Inciso ${termo.inciso}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Inciso (Art. 129 ECA):', `Inciso ${termo.inciso}`, 20, y, 170);
   }
   if (termo.Encaminhamento) {
-    y = adicionarTexto(doc, `Encaminhamento: ${termo.Encaminhamento}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Encaminhamento:', termo.Encaminhamento, 20, y, 170);
   }
   if (termo.endereco) {
-    y = adicionarTexto(doc, `Endereço: ${termo.endereco}`, 20, y, 170);
-    y += 5;
+    y = adicionarCampo(doc, 'Endereço:', termo.endereco, 20, y, 170);
   }
-  
-  y = adicionarTexto(doc, `Descrição:`, 20, y, 170);
-  y += 5;
+
+  y = adicionarCampo(doc, 'Aplico às medidas de proteção aos pais/responsável:', null, 20, y, 170);
   y = adicionarTexto(doc, termo.descricao || 'N/A', 20, y, 170);
 
-  adicionarAssinatura(doc, termo);
+  const yAssinatura = Math.max(y + 15, 245);
+  adicionarAssinatura(doc, termo, yAssinatura);
   doc.save(`TermoMedidasResponsavel_${termo.idmedida_aplicada || termo.id || 'N/A'}.pdf`);
 };
 
@@ -590,26 +759,26 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   doc.roundedRect(margemEsq, y, larguraUtil, 24, 2, 2, 'F');
 
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setFontSize(13);
-  doc.text(CABECALHO.titulo.toUpperCase(), larguraPagina / 2, y + 7, { align: 'center' });
+  doc.text(cabecalho.titulo.toUpperCase(), larguraPagina / 2, y + 7, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.setFontSize(8.5);
-  doc.text(CABECALHO.endereco, larguraPagina / 2, y + 13, { align: 'center' });
-  doc.text(CABECALHO.contato, larguraPagina / 2, y + 18, { align: 'center' });
+  doc.text(cabecalho.endereco, larguraPagina / 2, y + 13, { align: 'center' });
+  doc.text(cabecalho.contato, larguraPagina / 2, y + 18, { align: 'center' });
   y += 30;
 
   // Título Personalizado do Relatório
   doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.setFontSize(13);
   const linhasTitulo = doc.splitTextToSize(tituloRelatorio.toUpperCase(), larguraUtil);
   doc.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
   y += linhasTitulo.length * 6;
 
   if (subtituloRelatorio) {
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(9.5);
     doc.setTextColor(100, 116, 139);
     doc.text(subtituloRelatorio, larguraPagina / 2, y, { align: 'center' });
@@ -624,25 +793,25 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   doc.setFontSize(8.5);
   doc.setTextColor(51, 65, 85);
   const dataGeracao = new Date().toLocaleString('pt-BR');
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Emitido em:', margemEsq + 3, y + 5.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(dataGeracao, margemEsq + 23, y + 5.5);
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Responsável:', margemEsq + 70, y + 5.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(String(conselheiroEmissor || 'Conselheiro(a) Tutelar').substring(0, 42), margemEsq + 92, y + 5.5);
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times new roman', 'bold');
   doc.text('Total no Relatório:', margemEsq + 3, y + 10.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('times new roman', 'normal');
   doc.text(`${documentos.length} documento(s) selecionado(s)`, margemEsq + 33, y + 10.5);
 
   if (destinatario) {
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.text('Destinatário / Finalidade:', margemEsq + 3, y + 15.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.text(String(destinatario).substring(0, 80), margemEsq + 42, y + 15.5);
     y += 23;
   } else {
@@ -652,7 +821,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 2. Filtros e Critérios Aplicados
   if (incluirFiltros && resumoFiltrosAtivos && resumoFiltrosAtivos.length > 0) {
     verificarQuebraPagina(24);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(9.5);
     doc.setTextColor(49, 89, 163);
     doc.text('CRITÉRIOS E FILTROS APLICADOS NA CONSULTA', margemEsq, y);
@@ -666,7 +835,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setDrawColor(148, 163, 184);
     doc.roundedRect(margemEsq, y, larguraUtil, alturaCaixaFiltros, 1.5, 1.5, 'FD');
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(51, 65, 85);
     doc.text(linhasFiltros, margemEsq + 3, y + 5);
@@ -676,7 +845,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 3. Estatísticas e Gráficos de Distribuição
   if (incluirEstatisticas && documentos.length > 0) {
     verificarQuebraPagina(55);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('INDICADORES E DISTRIBUIÇÃO ESTATÍSTICA DO RECORTE', margemEsq, y);
@@ -717,7 +886,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       const qtd = contagemPorTipo[chave] || 0;
       const perc = documentos.length > 0 ? Math.round((qtd / documentos.length) * 100) : 0;
 
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
       doc.text(nome, margemEsq + 4, yBarra);
@@ -736,7 +905,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
         doc.roundedRect(xInicioBarra, yBarra - 3, larguraPreenchida, 3.8, 1, 1, 'F');
       }
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.text(`${qtd} (${perc}%)`, xInicioBarra + larguraMaxBarra + 4, yBarra);
       yBarra += 6.5;
     });
@@ -750,7 +919,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
 
     if (topBairros.length > 0) {
       verificarQuebraPagina(14);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       const textoBairros = 'Concentração por Bairro/Localidade: ' +
@@ -764,7 +933,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 4. Listagem Consolidada / Agrupada
   if (incluirTabela && documentos.length > 0) {
     verificarQuebraPagina(25);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('LISTAGEM CONSOLIDADA DE DOCUMENTOS', margemEsq, y);
@@ -778,7 +947,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       if (agrupamento !== 'nenhum') {
         doc.setFillColor(226, 232, 240);
         doc.roundedRect(margemEsq, y, larguraUtil, 7, 1, 1, 'F');
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('times new roman', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(30, 41, 59);
         doc.text(`${grupo.titulo} (${grupo.itens.length} registro${grupo.itens.length !== 1 ? 's' : ''})`, margemEsq + 3, y + 4.8);
@@ -788,7 +957,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       // Cabeçalho da Tabela
       doc.setFillColor(49, 89, 163);
       doc.rect(margemEsq, y, larguraUtil, 6.5, 'F');
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(255, 255, 255);
 
@@ -814,7 +983,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
           // Redesenha cabeçalho da tabela na nova página
           doc.setFillColor(49, 89, 163);
           doc.rect(margemEsq, y, larguraUtil, 6.5, 'F');
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('times new roman', 'bold');
           doc.setFontSize(7.5);
           doc.setTextColor(255, 255, 255);
           let cX = margemEsq + 2;
@@ -833,15 +1002,15 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
           doc.rect(margemEsq, y - 1, larguraUtil, alturaLinha, 'F');
         }
 
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('times new roman', 'normal');
         doc.setFontSize(7.2);
         doc.setTextColor(30, 41, 59);
 
         let xAtual = margemEsq + 2;
         if (colunas.id) {
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('times new roman', 'bold');
           doc.text(String(item.idExibicao || item.id).substring(0, 11), xAtual, y + 3.5);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('times new roman', 'normal');
           xAtual += 18;
         }
         if (colunas.tipo) {
@@ -880,7 +1049,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 5. Detalhamento Completo Individual (Fichas em Anexo)
   if (incluirDetalhamento && documentos.length > 0) {
     verificarQuebraPagina(35);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('DETALHAMENTO COMPLETO DOS DOCUMENTOS SELECIONADOS', margemEsq, y);
@@ -893,7 +1062,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(margemEsq, y, larguraUtil, 7, 1, 1, 'FD');
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(49, 89, 163);
       doc.text(
@@ -903,7 +1072,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
       );
       y += 10;
 
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
 
@@ -922,10 +1091,10 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
         y += linhasMeta.length * 4.2 + 2;
       }
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('times new roman', 'bold');
       doc.text('Relato / Descrição:', margemEsq + 2, y);
       y += 4;
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('times new roman', 'normal');
       const linhasRelato = doc.splitTextToSize(String(item.descricaoNormalizada || 'Sem descrição'), larguraUtil - 4);
       doc.text(linhasRelato, margemEsq + 2, y);
       y += linhasRelato.length * 4.2 + 4;
@@ -939,7 +1108,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   // 6. Parecer Técnico / Observações do Conselheiro
   if (observacoesRelatorio && observacoesRelatorio.trim() !== '') {
     verificarQuebraPagina(30);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(49, 89, 163);
     doc.text('PARECER TÉCNICO / OBSERVAÇÕES DO CONSELHEIRO RELATOR', margemEsq, y);
@@ -952,7 +1121,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setDrawColor(252, 211, 77);
     doc.roundedRect(margemEsq, y, larguraUtil, alturaObs, 1.5, 1.5, 'FD');
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(51, 65, 85);
     doc.text(linhasObs, margemEsq + 3, y + 5.5);
@@ -967,12 +1136,12 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
     doc.setLineWidth(0.4);
     doc.line(60, y + 10, 150, y + 10);
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('times new roman', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(30, 41, 59);
     doc.text(String(conselheiroEmissor || 'Conselheiro(a) Tutelar'), larguraPagina / 2, y + 15, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text('Conselho Tutelar de Panambi/RS - Documento Oficial Gerado pelo Sistema', larguraPagina / 2, y + 19.5, { align: 'center' });
@@ -982,7 +1151,7 @@ export const gerarRelatorioPersonalizadoPDF = (documentos, opcoes = {}) => {
   const totalPaginas = doc.internal.getNumberOfPages();
   for (let p = 1; p <= totalPaginas; p++) {
     doc.setPage(p);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('times new roman', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
     doc.line(margemEsq, 284, margemDir, 284);
